@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es" class="theme-dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart-Time Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tipografía Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">⏱️</div>
+        <div class="brand-text">
+          <h1>Smart‑Time Hub</h1>
+          <p>Convierte tus enlaces guardados en progreso real.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="search-box">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Buscar por título o categoría…">
+        </div>
+        <button id="themeToggle" class="btn btn-ghost">
+          Tema
+        </button>
+        <button id="addCardBtn" class="btn btn-primary">
+          + Añadir enlace / tarea
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section class="summary-bar">
+        <div class="summary-item">
+          <span class="summary-label">Pendientes</span>
+          <span id="pendingCount" class="summary-value">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Completadas semana</span>
+          <span id="completedCount" class="summary-value">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Tiempo total estimado</span>
+          <span id="totalTime" class="summary-value">0 min</span>
+        </div>
+      </section>
+
+      <section class="layout">
+        <aside class="sidebar">
+          <h2 class="sidebar-title">Nueva tarjeta</h2>
+          <form id="cardForm" class="card-form">
+            <label class="form-label" for="urlInput">URL</label>
+            <input
+              id="urlInput"
+              type="url"
+              required
+              placeholder="https://…">
+
+            <label class="form-label" for="titleInput">Título (opcional)</label>
+            <input
+              id="titleInput"
+              type="text"
+              placeholder="Se puede autocompletar más tarde">
+
+            <label class="form-label" for="categorySelect">Categoría</label>
+            <select id="categorySelect" required>
+              <option value="">Elige una categoría</option>
+              <option value="video">Video</option>
+              <option value="article">Artículo</option>
+              <option value="course">Curso</option>
+              <option value="project">Proyecto</option>
+            </select>
+
+            <label class="form-label" for="timeInput">Tiempo estimado (min)</label>
+            <input
+              id="timeInput"
+              type="number"
+              min="1"
+              max="600"
+              required
+              placeholder="Ej: 30">
+
+            <button type="submit" class="btn btn-primary btn-full">
+              Guardar tarjeta
+            </button>
+            <p class="form-helper">
+              Tip: guarda primero, luego ya decides cuándo hacerlo.
+            </p>
+          </form>
+        </aside>
+
+        <section class="cards-section">
+          <div class="cards-header">
+            <h2>Tu bolsa de enlaces y tareas</h2>
+            <p id="cardsSubtitle" class="cards-subtitle">
+              Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨
+            </p>
+          </div>
+
+          <div id="cardsGrid" class="cards-grid">
+            <!-- Tarjetas generadas por JS -->
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span id="footerSummary">
+          Aún no has añadido tareas. Empieza con algo pequeño de 10 minutos.
+        </span>
+      </div>
+      <div class="footer-right">
+        <button id="clearCompletedBtn" class="btn btn-ghost-sm">
+          Limpiar completadas
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <template id="cardTemplate">
+    <article class="card">
+      <button class="card-complete-btn" aria-label="Marcar como completada">
+        ✓
+      </button>
+      <div class="card-body">
+        <div class="card-header">
+          <h3 class="card-title"></h3>
+        </div>
+        <p class="card-url"></p>
+        <div class="card-meta">
+          <span class="pill pill-category"></span>
+          <span class="pill pill-time"></span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-link card-open-btn">
+          Abrir
+        </button>
+        <button class="btn-link card-delete-btn">
+          Borrar
+        </button>
+      </div>
+    </article>
+  </template>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
