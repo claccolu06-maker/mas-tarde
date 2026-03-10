@@ -1,4 +1,3 @@
-// Claves de almacenamiento
 const STORAGE_KEY = 'smartTimeHub.cards';
 
 let cards = [];
@@ -40,6 +39,21 @@ function saveCards() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
 
+function categoryLabel(cat) {
+  switch (cat) {
+    case 'video':
+      return 'Video';
+    case 'article':
+      return 'Artículo';
+    case 'course':
+      return 'Curso';
+    case 'project':
+      return 'Proyecto';
+    default:
+      return 'Otro';
+  }
+}
+
 function createCard({ id, url, title, category, estimatedTime, completed }) {
   const node = elements.cardTemplate.content.firstElementChild.cloneNode(true);
 
@@ -70,7 +84,7 @@ function createCard({ id, url, title, category, estimatedTime, completed }) {
 
   openBtn.addEventListener('click', (event) => {
     event.stopPropagation();
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener');
   });
 
   deleteBtn.addEventListener('click', (event) => {
@@ -79,25 +93,10 @@ function createCard({ id, url, title, category, estimatedTime, completed }) {
   });
 
   node.addEventListener('click', () => {
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener');
   });
 
   return node;
-}
-
-function categoryLabel(cat) {
-  switch (cat) {
-    case 'video':
-      return 'Video';
-    case 'article':
-      return 'Artículo';
-    case 'course':
-      return 'Curso';
-    case 'project':
-      return 'Proyecto';
-    default:
-      return 'Otro';
-  }
 }
 
 function render() {
@@ -133,7 +132,10 @@ function render() {
 function updateSummary() {
   const pending = cards.filter((c) => !c.completed);
   const completed = cards.filter((c) => c.completed);
-  const totalTime = pending.reduce((sum, c) => sum + (c.estimatedTime || 0), 0);
+  const totalTime = pending.reduce(
+    (sum, c) => sum + (c.estimatedTime || 0),
+    0
+  );
 
   elements.pendingCount.textContent = pending.length;
   elements.completedCount.textContent = completed.length;
@@ -178,10 +180,13 @@ function addCardFromForm(event) {
   render();
   elements.form.reset();
 
-  elements.cardsGrid.firstElementChild?.classList.add('just-added');
-  setTimeout(() => {
-    elements.cardsGrid.firstElementChild?.classList.remove('just-added');
-  }, 400);
+  const firstCard = elements.cardsGrid.firstElementChild;
+  if (firstCard) {
+    firstCard.classList.add('just-added');
+    setTimeout(() => {
+      firstCard.classList.remove('just-added');
+    }, 400);
+  }
 }
 
 function toggleCompleted(id) {
@@ -230,7 +235,10 @@ function toggleTheme() {
 
 function initTheme() {
   const root = document.documentElement;
-  if (!root.classList.contains('theme-dark') && !root.classList.contains('theme-light')) {
+  if (
+    !root.classList.contains('theme-dark') &&
+    !root.classList.contains('theme-light')
+  ) {
     root.classList.add('theme-dark');
   }
 }
