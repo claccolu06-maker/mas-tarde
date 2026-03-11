@@ -81,13 +81,13 @@ body {
 /* Menú lateral */
 
 .sidebar-nav {
-  width: 220px;
-  padding: 1rem 0.8rem;
+  width: 260px;
+  padding: 1rem 0.9rem 1.5rem;
   border-right: 1px solid var(--color-border);
   background: radial-gradient(circle at 0 0, #22c55e22, #020617ff);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .nav-brand {
@@ -108,15 +108,27 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .nav-title {
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+.nav-subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-soft);
 }
 
 .nav-menu {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  margin-top: 0.2rem;
 }
 
 .nav-item {
@@ -142,6 +154,34 @@ body {
 .nav-item-active {
   background: linear-gradient(135deg, #22c55e, #4ade80);
   color: #022c22;
+}
+
+/* Onboarding lateral */
+
+.nav-onboarding {
+  margin-top: 0.5rem;
+  padding: 0.7rem 0.6rem;
+  border-radius: var(--radius-lg);
+  background-color: rgba(15, 23, 42, 0.95);
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  font-size: 0.75rem;
+  color: var(--color-text-soft);
+}
+
+.nav-onboarding-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.nav-onboarding ol {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.nav-onboarding li {
+  margin-bottom: 0.15rem;
 }
 
 /* Contenedor principal (header + main + footer) */
@@ -332,7 +372,7 @@ select:focus-visible {
   display: block;
 }
 
-/* Layout de Bandeja (reaprovecha lo que ya tenías) */
+/* Layout de Bandeja */
 
 .layout {
   display: grid;
@@ -352,8 +392,14 @@ select:focus-visible {
 }
 
 .sidebar-title {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.35rem;
   font-size: 1rem;
+}
+
+.sidebar-intro {
+  margin: 0 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--color-text-soft);
 }
 
 .card-form {
@@ -397,13 +443,26 @@ select:focus-visible {
   box-shadow: var(--shadow-soft);
 }
 
+.cards-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
 .cards-header h2 {
   margin: 0;
 }
 
 .cards-subtitle {
-  margin: 0.25rem 0 1rem;
+  margin: 0.25rem 0 0.4rem;
   font-size: 0.8rem;
+  color: var(--color-text-soft);
+}
+
+.cards-helper {
+  max-width: 260px;
+  font-size: 0.75rem;
   color: var(--color-text-soft);
 }
 
@@ -411,6 +470,7 @@ select:focus-visible {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 0.9rem;
+  margin-top: 0.6rem;
 }
 
 .card {
@@ -533,11 +593,42 @@ select:focus-visible {
   font-size: 0.8rem;
 }
 
+/* Estado vacío de la bandeja */
+
+.empty-state {
+  margin-top: 1.2rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background-color: rgba(15, 23, 42, 0.85);
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  display: none; /* JS la mostrará cuando no haya tarjetas */
+}
+
+.empty-state h3 {
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.empty-state ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
 /* Focus placeholder */
 
 .focus-placeholder {
   padding: 1.5rem 1rem;
   max-width: 640px;
+}
+
+.focus-next-step {
+  margin-top: 0.8rem;
+  font-size: 0.8rem;
+  color: var(--color-text-soft);
 }
 
 /* FOOTER */
@@ -599,10 +690,11 @@ select:focus-visible {
   .sidebar-nav {
     width: 100%;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     border-right: none;
     border-bottom: 1px solid var(--color-border);
+    gap: 0.8rem;
   }
 
   .nav-menu {
@@ -612,6 +704,10 @@ select:focus-visible {
 
   .nav-item {
     padding-inline: 0.75rem;
+  }
+
+  .nav-onboarding {
+    display: none;
   }
 }
 
