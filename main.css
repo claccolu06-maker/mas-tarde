@@ -58,7 +58,7 @@ body {
   color: var(--color-text);
 }
 
-/* Solo para lectores de pantalla */
+/* Solo lectores de pantalla */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -70,13 +70,89 @@ body {
   border: 0;
 }
 
+/* ===== LAYOUT GENERAL CON MENÚ LATERAL ===== */
+
 .app {
   min-height: 100vh;
+  display: flex;
+  background-color: var(--color-bg);
+}
+
+/* Menú lateral */
+
+.sidebar-nav {
+  width: 220px;
+  padding: 1rem 0.8rem;
+  border-right: 1px solid var(--color-border);
+  background: radial-gradient(circle at 0 0, #22c55e22, #020617ff);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-inline: 0.4rem;
+}
+
+.nav-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 10% 10%, #22c55e, #38bdf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+}
+
+.nav-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.nav-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.nav-item:hover {
+  background-color: rgba(148, 163, 184, 0.14);
+  transform: translateX(2px);
+}
+
+.nav-item-active {
+  background: linear-gradient(135deg, #22c55e, #4ade80);
+  color: #022c22;
+}
+
+/* Contenedor principal (header + main + footer) */
+
+.app-main-wrapper {
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
+/* ===== HEADER ===== */
 
 .app-header {
   display: flex;
@@ -143,7 +219,7 @@ body {
   color: var(--color-text-soft);
 }
 
-/* Buttons */
+/* ===== BOTONES ===== */
 
 .btn {
   border-radius: var(--radius-md);
@@ -213,7 +289,7 @@ select:focus-visible {
   text-decoration: underline;
 }
 
-/* Layout principal */
+/* ===== MAIN Y VISTAS ===== */
 
 .app-main {
   flex: 1;
@@ -245,6 +321,18 @@ select:focus-visible {
   font-size: 1.1rem;
   font-weight: 600;
 }
+
+/* Vistas */
+
+.view {
+  display: none;
+}
+
+.view-active {
+  display: block;
+}
+
+/* Layout de Bandeja (reaprovecha lo que ya tenías) */
 
 .layout {
   display: grid;
@@ -445,7 +533,14 @@ select:focus-visible {
   font-size: 0.8rem;
 }
 
-/* Footer */
+/* Focus placeholder */
+
+.focus-placeholder {
+  padding: 1.5rem 1rem;
+  max-width: 640px;
+}
+
+/* FOOTER */
 
 .app-footer {
   padding: 0.6rem 1.5rem 0.9rem;
@@ -494,14 +589,29 @@ select:focus-visible {
   .cards-section {
     order: 1;
   }
+}
 
-  .header-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+@media (max-width: 800px) {
+  .app {
+    flex-direction: column;
   }
 
-  .search-box input {
+  .sidebar-nav {
     width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .nav-menu {
+    flex-direction: row;
+    gap: 0.25rem;
+  }
+
+  .nav-item {
+    padding-inline: 0.75rem;
   }
 }
 
