@@ -12,125 +12,170 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
- <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="main.css"><!-- o css/main.css si usas carpeta -->
 </head>
 <body>
   <div class="app">
-    <header class="app-header">
-      <div class="brand" aria-label="Smart-Time Hub">
-        <div class="brand-logo" aria-hidden="true">⏱️</div>
-        <div class="brand-text">
-          <h1>Smart‑Time Hub</h1>
-          <p>Convierte tus enlaces guardados en progreso real.</p>
-        </div>
+
+    <!-- MENÚ LATERAL -->
+    <aside class="sidebar-nav">
+      <div class="nav-brand" aria-label="Smart-Time Hub">
+        <span class="nav-logo" aria-hidden="true">⏱️</span>
+        <span class="nav-title">Smart‑Time Hub</span>
       </div>
-      <div class="header-actions">
-        <div class="search-box">
-          <label class="sr-only" for="searchInput">Buscar tareas</label>
-          <input
-            id="searchInput"
-            type="search"
-            placeholder="Buscar por título o categoría…">
-        </div>
-        <button id="themeToggle" class="btn btn-ghost" type="button">
-          Tema
+      <nav class="nav-menu">
+        <button
+          class="nav-item nav-item-active"
+          data-view="inbox"
+          type="button">
+          Bandeja
         </button>
-        <button id="addCardBtn" class="btn btn-primary" type="button">
-          + Añadir enlace / tarea
+        <button
+          class="nav-item"
+          data-view="focus"
+          type="button">
+          Focus / Hoy
         </button>
-      </div>
-    </header>
+      </nav>
+    </aside>
 
-    <main class="app-main">
-      <section class="summary-bar" aria-label="Resumen de tareas">
-        <div class="summary-item">
-          <span class="summary-label">Pendientes</span>
-          <span id="pendingCount" class="summary-value">0</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Completadas semana</span>
-          <span id="completedCount" class="summary-value">0</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Tiempo total estimado</span>
-          <span id="totalTime" class="summary-value">0 min</span>
-        </div>
-      </section>
-
-      <section class="layout">
-        <aside class="sidebar" aria-label="Formulario para nueva tarjeta">
-          <h2 class="sidebar-title">Nueva tarjeta</h2>
-          <form id="cardForm" class="card-form" autocomplete="off">
-            <label class="form-label" for="urlInput">URL</label>
-            <input
-              id="urlInput"
-              name="url"
-              type="url"
-              required
-              placeholder="https://…">
-
-            <label class="form-label" for="titleInput">Título (opcional)</label>
-            <input
-              id="titleInput"
-              name="title"
-              type="text"
-              placeholder="Se puede autocompletar más tarde">
-
-            <label class="form-label" for="categorySelect">Categoría</label>
-            <select id="categorySelect" name="category" required>
-              <option value="">Elige una categoría</option>
-              <option value="video">Video</option>
-              <option value="article">Artículo</option>
-              <option value="course">Curso</option>
-              <option value="project">Proyecto</option>
-            </select>
-
-            <label class="form-label" for="timeInput">Tiempo estimado (min)</label>
-            <input
-              id="timeInput"
-              name="estimatedTime"
-              type="number"
-              min="1"
-              max="600"
-              required
-              placeholder="Ej: 30">
-
-            <button type="submit" class="btn btn-primary btn-full">
-              Guardar tarjeta
-            </button>
-            <p class="form-helper">
-              Tip: guarda sin pensar demasiado; ya decidirás más tarde qué hacer primero.
-            </p>
-          </form>
-        </aside>
-
-        <section class="cards-section" aria-label="Listado de tarjetas">
-          <div class="cards-header">
-            <h2>Tu bolsa de enlaces y tareas</h2>
-            <p id="cardsSubtitle" class="cards-subtitle">
-              Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨
-            </p>
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="app-main-wrapper">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true">⏱️</div>
+          <div class="brand-text">
+            <h1>Smart‑Time Hub</h1>
+            <p>Convierte tus enlaces guardados en progreso real.</p>
           </div>
+        </div>
+        <div class="header-actions">
+          <div class="search-box">
+            <label class="sr-only" for="searchInput">Buscar tareas</label>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar por título o categoría…">
+          </div>
+          <button id="themeToggle" class="btn btn-ghost" type="button">
+            Tema
+          </button>
+          <button id="addCardBtn" class="btn btn-primary" type="button">
+            + Añadir enlace / tarea
+          </button>
+        </div>
+      </header>
 
-          <div id="cardsGrid" class="cards-grid">
-            <!-- Tarjetas generadas por JS -->
+      <main class="app-main">
+        <!-- BARRA DE RESUMEN (visible en ambas vistas) -->
+        <section class="summary-bar" aria-label="Resumen de tareas">
+          <div class="summary-item">
+            <span class="summary-label">Pendientes</span>
+            <span id="pendingCount" class="summary-value">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Completadas semana</span>
+            <span id="completedCount" class="summary-value">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Tiempo total estimado</span>
+            <span id="totalTime" class="summary-value">0 min</span>
           </div>
         </section>
-      </section>
-    </main>
 
-    <footer class="app-footer">
-      <div class="footer-left">
-        <span id="footerSummary">
-          Aún no has añadido tareas. Empieza con algo pequeño de 10 minutos.
-        </span>
-      </div>
-      <div class="footer-right">
-        <button id="clearCompletedBtn" class="btn btn-ghost-sm" type="button">
-          Limpiar completadas
-        </button>
-      </div>
-    </footer>
+        <!-- VISTA 1: BANDEJA -->
+        <section id="view-inbox" class="view view-active" aria-label="Bandeja de tareas">
+          <section class="layout">
+            <aside class="sidebar" aria-label="Formulario para nueva tarjeta">
+              <h2 class="sidebar-title">Nueva tarjeta</h2>
+              <form id="cardForm" class="card-form" autocomplete="off">
+                <label class="form-label" for="urlInput">URL</label>
+                <input
+                  id="urlInput"
+                  name="url"
+                  type="url"
+                  required
+                  placeholder="https://…">
+
+                <label class="form-label" for="titleInput">Título (opcional)</label>
+                <input
+                  id="titleInput"
+                  name="title"
+                  type="text"
+                  placeholder="Se puede autocompletar más tarde">
+
+                <label class="form-label" for="categorySelect">Categoría</label>
+                <select id="categorySelect" name="category" required>
+                  <option value="">Elige una categoría</option>
+                  <option value="video">Video</option>
+                  <option value="article">Artículo</option>
+                  <option value="course">Curso</option>
+                  <option value="project">Proyecto</option>
+                </select>
+
+                <label class="form-label" for="timeInput">Tiempo estimado (min)</label>
+                <input
+                  id="timeInput"
+                  name="estimatedTime"
+                  type="number"
+                  min="1"
+                  max="600"
+                  required
+                  placeholder="Ej: 30">
+
+                <button type="submit" class="btn btn-primary btn-full">
+                  Guardar tarjeta
+                </button>
+                <p class="form-helper">
+                  Tip: guarda sin pensar demasiado; ya decidirás más tarde qué hacer primero.
+                </p>
+              </form>
+            </aside>
+
+            <section class="cards-section" aria-label="Listado de tarjetas">
+              <div class="cards-header">
+                <h2>Tu bolsa de enlaces y tareas</h2>
+                <p id="cardsSubtitle" class="cards-subtitle">
+                  Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨
+                </p>
+              </div>
+
+              <div id="cardsGrid" class="cards-grid">
+                <!-- Tarjetas generadas por JS -->
+              </div>
+            </section>
+          </section>
+        </section>
+
+        <!-- VISTA 2: FOCUS / HOY -->
+        <section id="view-focus" class="view" aria-label="Modo foco">
+          <div class="focus-placeholder">
+            <h2>Modo Focus / Hoy</h2>
+            <p>
+              Aquí podrás elegir una o varias tareas de tu bandeja
+              y empezar una sesión de enfoque con temporizador.
+            </p>
+            <p>
+              En el siguiente sprint convertiremos esta vista en una
+              pantalla limpia con cuenta atrás y sin distracciones.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <div class="footer-left">
+          <span id="footerSummary">
+            Aún no has añadido tareas. Empieza con algo pequeño de 10 minutos.
+          </span>
+        </div>
+        <div class="footer-right">
+          <button id="clearCompletedBtn" class="btn btn-ghost-sm" type="button">
+            Limpiar completadas
+          </button>
+        </div>
+      </footer>
+    </div>
   </div>
 
   <template id="cardTemplate">
@@ -159,7 +204,6 @@
     </article>
   </template>
 
- <script src="app.js"></script>
+  <script src="app.js"></script><!-- o js/app.js si usas carpeta -->
 </body>
 </html>
-
