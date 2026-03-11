@@ -12,7 +12,7 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="main.css"><!-- o css/main.css si usas carpeta -->
+  <link rel="stylesheet" href="main.css">
 </head>
 <body>
   <div class="app">
@@ -21,9 +21,12 @@
     <aside class="sidebar-nav">
       <div class="nav-brand" aria-label="Smart-Time Hub">
         <span class="nav-logo" aria-hidden="true">⏱️</span>
-        <span class="nav-title">Smart‑Time Hub</span>
+        <div class="nav-brand-text">
+          <span class="nav-title">Smart‑Time Hub</span>
+          <span class="nav-subtitle">Tu agenda de “más tarde” inteligente</span>
+        </div>
       </div>
-      <nav class="nav-menu">
+      <nav class="nav-menu" aria-label="Secciones principales">
         <button
           class="nav-item nav-item-active"
           data-view="inbox"
@@ -36,7 +39,18 @@
           type="button">
           Focus / Hoy
         </button>
+        <!-- Más adelante: Agenda / Historial / Ajustes -->
       </nav>
+
+      <!-- Mini onboarding en el lateral cuando no hay tareas -->
+      <div class="nav-onboarding">
+        <p class="nav-onboarding-title">Cómo usarlo</p>
+        <ol>
+          <li>Guarda un enlace o tarea en la Bandeja.</li>
+          <li>Organiza qué harás hoy.</li>
+          <li>Pasa a Focus y trabaja sin distracciones.</li>
+        </ol>
+      </div>
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -84,10 +98,17 @@
         </section>
 
         <!-- VISTA 1: BANDEJA -->
-        <section id="view-inbox" class="view view-active" aria-label="Bandeja de tareas">
+        <section
+          id="view-inbox"
+          class="view view-active"
+          aria-label="Bandeja de tareas para más tarde">
           <section class="layout">
             <aside class="sidebar" aria-label="Formulario para nueva tarjeta">
-              <h2 class="sidebar-title">Nueva tarjeta</h2>
+              <h2 class="sidebar-title">Añade algo para “más tarde”</h2>
+              <p class="sidebar-intro">
+                Pega un vídeo, artículo o lo que sea que no quieras perder.
+              </p>
+
               <form id="cardForm" class="card-form" autocomplete="off">
                 <label class="form-label" for="urlInput">URL</label>
                 <input
@@ -124,7 +145,7 @@
                   placeholder="Ej: 30">
 
                 <button type="submit" class="btn btn-primary btn-full">
-                  Guardar tarjeta
+                  Guardar tarjeta en la bandeja
                 </button>
                 <p class="form-helper">
                   Tip: guarda sin pensar demasiado; ya decidirás más tarde qué hacer primero.
@@ -134,14 +155,36 @@
 
             <section class="cards-section" aria-label="Listado de tarjetas">
               <div class="cards-header">
-                <h2>Tu bolsa de enlaces y tareas</h2>
-                <p id="cardsSubtitle" class="cards-subtitle">
-                  Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨
-                </p>
+                <div>
+                  <h2>Tu bolsa de enlaces y tareas</h2>
+                  <p id="cardsSubtitle" class="cards-subtitle">
+                    Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨
+                  </p>
+                </div>
+                <div class="cards-helper">
+                  <p>
+                    Cuando tengas varias tareas, podrás enviar algunas a
+                    <strong>Focus / Hoy</strong> para hacerlas con temporizador.
+                  </p>
+                </div>
               </div>
 
               <div id="cardsGrid" class="cards-grid">
                 <!-- Tarjetas generadas por JS -->
+              </div>
+
+              <!-- Estado vacío visual cuando no hay tarjetas -->
+              <div id="emptyState" class="empty-state" aria-hidden="true">
+                <h3>Empieza guardando tu primera tarea</h3>
+                <p>
+                  Pega un enlace en el formulario de la izquierda y verás aquí
+                  tus tarjetas listas para organizar y hacer en modo foco.
+                </p>
+                <ul>
+                  <li>Videos que quieres ver con calma</li>
+                  <li>Artículos largos que no quieres perder</li>
+                  <li>Cursos y proyectos que requieren tiempo</li>
+                </ul>
               </div>
             </section>
           </section>
@@ -153,11 +196,17 @@
             <h2>Modo Focus / Hoy</h2>
             <p>
               Aquí podrás elegir una o varias tareas de tu bandeja
-              y empezar una sesión de enfoque con temporizador.
+              y empezar una sesión de enfoque con temporizador
+              y menos distracciones.
             </p>
             <p>
-              En el siguiente sprint convertiremos esta vista en una
-              pantalla limpia con cuenta atrás y sin distracciones.
+              Próximo paso: convertiremos esta vista en una pantalla limpia
+              con cuenta atrás, barra de progreso y botón para marcar la tarea
+              como completada.
+            </p>
+            <p class="focus-next-step">
+              Para preparar el terreno, sigue llenando tu bandeja y
+              mantén tiempos estimados realistas.
             </p>
           </div>
         </section>
@@ -204,6 +253,6 @@
     </article>
   </template>
 
-  <script src="app.js"></script><!-- o js/app.js si usas carpeta -->
+  <script src="app.js"></script>
 </body>
 </html>
