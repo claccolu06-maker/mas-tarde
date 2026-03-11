@@ -89,6 +89,7 @@ function createCard({ id, url, title, category, estimatedTime, completed }) {
   const completeBtn = node.querySelector('.card-complete-btn');
   const openBtn = node.querySelector('.card-open-btn');
   const deleteBtn = node.querySelector('.card-delete-btn');
+  const focusBtn = node.querySelector('.card-focus-btn');
 
   titleEl.textContent = title || '(Sin título)';
   urlEl.textContent = url;
@@ -100,6 +101,11 @@ function createCard({ id, url, title, category, estimatedTime, completed }) {
 
   if (completed) {
     node.classList.add('completed');
+  }
+
+  // Marcar tarjeta activa en Focus
+  if (focusSelectedId && focusSelectedId === id) {
+    node.classList.add('focus-active');
   }
 
   completeBtn.addEventListener('click', (event) => {
@@ -115,6 +121,11 @@ function createCard({ id, url, title, category, estimatedTime, completed }) {
   deleteBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     confirmDelete(id);
+  });
+
+  focusBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    startFocusSessionFromCard(id);
   });
 
   node.addEventListener('click', () => {
@@ -369,6 +380,7 @@ function handleFocusTaskChange() {
   if (!focusSelectedId) {
     clearFocusTaskDetails();
     resetFocusTimer();
+    render(); // quitar resaltado si no hay tarea seleccionada
     return;
   }
 
@@ -376,6 +388,7 @@ function handleFocusTaskChange() {
   if (!card) {
     clearFocusTaskDetails();
     resetFocusTimer();
+    render();
     return;
   }
 
@@ -393,6 +406,7 @@ function handleFocusTaskChange() {
   };
 
   resetFocusTimer();
+  render(); // repintar bandeja para marcar tarjeta activa
 }
 
 function clearFocusTaskDetails() {
@@ -499,6 +513,31 @@ function handleFocusSessionEnd() {
     } else {
       resetFocusTimer();
     }
+  }
+}
+
+/* Iniciar Focus desde una tarjeta de la bandeja */
+
+function startFocusSessionFromCard(id) {
+  const card = cards.find((c) => c.id === id && !c.completed);
+  if (!card) return;
+
+  focusSelectedId = id;
+
+  // Cambiar a vista Focus
+  switchView('focus');
+
+  // Seleccionar en el dropdown
+  if (elements.focusTaskSelect) {
+    elements.focusTaskSelect.value = id;
+  }
+
+  // Actualizar detalles y temporizador
+  handleFocusTaskChange();
+  resetFocusTimer();
+
+  if (elements.focusStartPauseBtn) {
+    elements.focusStartPauseBtn.focus();
   }
 }
 
