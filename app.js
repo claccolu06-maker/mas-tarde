@@ -21,6 +21,15 @@ const elements = {
   addCardBtn: document.getElementById('addCardBtn'),
 };
 
+const viewElements = {
+  inbox: document.getElementById('view-inbox'),
+  focus: document.getElementById('view-focus'),
+};
+
+const navButtons = document.querySelectorAll('.nav-item[data-view]');
+
+/* ===== STORAGE ===== */
+
 function loadCards() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
@@ -38,6 +47,8 @@ function loadCards() {
 function saveCards() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
+
+/* ===== RENDERIZADO DE TARJETAS ===== */
 
 function categoryLabel(cat) {
   switch (cat) {
@@ -152,6 +163,8 @@ function updateSummary() {
   }
 }
 
+/* ===== CRUD ===== */
+
 function addCardFromForm(event) {
   event.preventDefault();
 
@@ -217,9 +230,13 @@ function clearCompleted() {
   render();
 }
 
+/* ===== BÚSQUEDA ===== */
+
 function handleSearch() {
   render();
 }
+
+/* ===== TEMA ===== */
 
 function toggleTheme() {
   const root = document.documentElement;
@@ -243,6 +260,39 @@ function initTheme() {
   }
 }
 
+/* ===== NAVEGACIÓN ENTRE VISTAS ===== */
+
+function switchView(target) {
+  Object.values(viewElements).forEach((section) => {
+    section.classList.remove('view-active');
+  });
+  navButtons.forEach((btn) => btn.classList.remove('nav-item-active'));
+
+  const section = viewElements[target];
+  if (section) {
+    section.classList.add('view-active');
+  }
+
+  navButtons.forEach((btn) => {
+    if (btn.dataset.view === target) {
+      btn.classList.add('nav-item-active');
+    }
+  });
+}
+
+function initNavigation() {
+  navButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.view;
+      switchView(target);
+    });
+  });
+
+  switchView('inbox');
+}
+
+/* ===== INIT ===== */
+
 function init() {
   initTheme();
   loadCards();
@@ -252,10 +302,11 @@ function init() {
   elements.searchInput.addEventListener('input', handleSearch);
   elements.clearCompletedBtn.addEventListener('click', clearCompleted);
   elements.themeToggle.addEventListener('click', toggleTheme);
-
   elements.addCardBtn.addEventListener('click', () => {
     elements.urlInput.focus();
   });
+
+  initNavigation();
 }
 
 document.addEventListener('DOMContentLoaded', init);
