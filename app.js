@@ -20,6 +20,19 @@ const elements = {
   themeToggle: document.getElementById('themeToggle'),
   addCardBtn: document.getElementById('addCardBtn'),
   emptyState: document.getElementById('emptyState'),
+
+  // Focus mode
+  focusTaskSelect: document.getElementById('focusTaskSelect'),
+  focusTaskCard: document.getElementById('focusTaskCard'),
+  focusTaskContent: document.getElementById('focusTaskContent'),
+  focusTaskTitle: document.getElementById('focusTaskTitle'),
+  focusTaskUrl: document.getElementById('focusTaskUrl'),
+  focusTaskCategory: document.getElementById('focusTaskCategory'),
+  focusTaskTime: document.getElementById('focusTaskTime'),
+  focusOpenBtn: document.getElementById('focusOpenBtn'),
+  focusTimerDisplay: document.getElementById('focusTimerDisplay'),
+  focusStartPauseBtn: document.getElementById('focusStartPauseBtn'),
+  focusResetBtn: document.getElementById('focusResetBtn'),
 };
 
 const viewElements = {
@@ -49,7 +62,7 @@ function saveCards() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
 
-/* ===== RENDERIZADO DE TARJETAS ===== */
+/* ===== RENDER TARJETAS ===== */
 
 function categoryLabel(cat) {
   switch (cat) {
@@ -123,7 +136,6 @@ function render() {
     );
   });
 
-  // Subtítulo contextual
   if (filtered.length === 0 && cards.length === 0 && elements.emptyState) {
     elements.cardsSubtitle.textContent =
       'Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨';
@@ -144,9 +156,11 @@ function render() {
 
   updateEmptyState(filtered);
   updateSummary();
+  updateFocusTaskOptions();
 }
 
-/* Mostrar / ocultar estado vacío de la bandeja */
+/* Estado vacío */
+
 function updateEmptyState(filteredCards) {
   if (!elements.emptyState) return;
 
@@ -154,15 +168,12 @@ function updateEmptyState(filteredCards) {
   const hasFilteredCards = filteredCards.length > 0;
 
   if (!hasAnyCard) {
-    // Sin ninguna tarjeta: mostrar mensaje inicial
     elements.emptyState.style.display = 'block';
     elements.emptyState.setAttribute('aria-hidden', 'false');
   } else if (!hasFilteredCards) {
-    // Hay tarjetas pero el filtro no devuelve nada: ocultamos emptyState
     elements.emptyState.style.display = 'none';
     elements.emptyState.setAttribute('aria-hidden', 'true');
   } else {
-    // Hay tarjetas y el filtro devuelve algo: ocultar estado vacío
     elements.emptyState.style.display = 'none';
     elements.emptyState.setAttribute('aria-hidden', 'true');
   }
@@ -319,6 +330,178 @@ function initNavigation() {
   switchView('inbox');
 }
 
+/* ===== MODO FOCUS (30 MIN) ===== */
+
+const FOCUS_DURATION_SECONDS = 30 * 60;
+let focusSelectedId = null;
+let focusRemainingSeconds = FOCUS_DURATION_SECONDS;
+let focusIntervalId = null;
+let focusRunning = false;
+
+function updateFocusTaskOptions() {
+  if (!elements.focusTaskSelect) return;
+
+  const pending = cards.filter((c) => !c.completed);
+  const currentValue = elements.focusTaskSelect.value;
+
+  elements.focusTaskSelect.innerHTML =
+    '<option value="">Selecciona una tarea pendiente…</option>';
+
+  pending.forEach((card) => {
+    const option = document.createElement('option');
+    option.value = card.id;
+    option.textContent = card.title || card.url;
+    elements.focusTaskSelect.appendChild(option);
+  });
+
+  if (pending.some((c) => c.id === currentValue)) {
+    elements.focusTaskSelect.value = currentValue;
+  } else {
+    focusSelectedId = null;
+    clearFocusTaskDetails();
+    resetFocusTimer();
+  }
+}
+
+function handleFocusTaskChange() {
+  const id = elements.focusTaskSelect.value;
+  focusSelectedId = id || null;
+  if (!focusSelectedId) {
+    clearFocusTaskDetails();
+    resetFocusTimer();
+    return;
+  }
+
+  const card = cards.find((c) => c.id === focusSelectedId && !c.completed);
+  if (!card) {
+    clearFocusTaskDetails();
+    resetFocusTimer();
+    return;
+  }
+
+  elements.focusTaskContent.hidden = false;
+  const emptyText = elements.focusTaskCard.querySelector('.focus-empty');
+  if (emptyText) emptyText.style.display = 'none';
+
+  elements.focusTaskTitle.textContent = card.title || '(Sin título)';
+  elements.focusTaskUrl.textContent = card.url;
+  elements.focusTaskCategory.textContent = categoryLabel(card.category);
+  elements.focusTaskTime.textContent = `${card.estimatedTime} min`;
+
+  elements.focusOpenBtn.onclick = () => {
+    window.open(card.url, '_blank', 'noopener');
+  };
+
+  resetFocusTimer();
+}
+
+function clearFocusTaskDetails() {
+  if (!elements.focusTaskContent) return;
+  elements.focusTaskContent.hidden = true;
+  const emptyText = elements.focusTaskCard.querySelector('.focus-empty');
+  if (emptyText) emptyText.style.display = 'block';
+  elements.focusTaskTitle.textContent = '';
+  elements.focusTaskUrl.textContent = '';
+  elements.focusTaskCategory.textContent = '';
+  elements.focusTaskTime.textContent = '';
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateFocusTimerDisplay() {
+  if (!elements.focusTimerDisplay) return;
+  elements.focusTimerDisplay.textContent = formatTime(focusRemainingSeconds);
+}
+
+function resetFocusTimer() {
+  stopFocusTimer();
+  focusRemainingSeconds = FOCUS_DURATION_SECONDS;
+  updateFocusTimerDisplay();
+  if (elements.focusStartPauseBtn) {
+    elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
+  }
+}
+
+function tickFocusTimer() {
+  if (focusRemainingSeconds <= 0) {
+    stopFocusTimer();
+    focusRemainingSeconds = 0;
+    updateFocusTimerDisplay();
+    if (elements.focusStartPauseBtn) {
+      elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
+    }
+    handleFocusSessionEnd();
+    return;
+  }
+  focusRemainingSeconds -= 1;
+  updateFocusTimerDisplay();
+}
+
+function startFocusTimer() {
+  if (focusRunning || !focusSelectedId) return;
+  focusRunning = true;
+  focusIntervalId = setInterval(tickFocusTimer, 1000);
+  if (elements.focusStartPauseBtn) {
+    elements.focusStartPauseBtn.textContent = 'Pausar';
+  }
+}
+
+function stopFocusTimer() {
+  focusRunning = false;
+  if (focusIntervalId) {
+    clearInterval(focusIntervalId);
+    focusIntervalId = null;
+  }
+}
+
+function toggleFocusTimer() {
+  if (!focusSelectedId) {
+    alert('Primero elige una tarea para esta sesión.');
+    return;
+  }
+  if (focusRunning) {
+    stopFocusTimer();
+    if (elements.focusStartPauseBtn) {
+      elements.focusStartPauseBtn.textContent = 'Reanudar';
+    }
+  } else {
+    startFocusTimer();
+  }
+}
+
+function handleFocusSessionEnd() {
+  if (!focusSelectedId) return;
+  const card = cards.find((c) => c.id === focusSelectedId);
+  if (!card) return;
+
+  const markDone = confirm(
+    'Has terminado una sesión de 30 minutos.\n\n¿Quieres marcar esta tarea como completada?'
+  );
+
+  if (markDone) {
+    card.completed = true;
+    card.completedAt = Date.now();
+    saveCards();
+    render();
+    updateFocusTaskOptions();
+    clearFocusTaskDetails();
+  } else {
+    const moreTime = confirm('¿Quieres reiniciar el temporizador para otros 30 minutos?');
+    if (moreTime) {
+      resetFocusTimer();
+      startFocusTimer();
+    } else {
+      resetFocusTimer();
+    }
+  }
+}
+
 /* ===== INIT ===== */
 
 function init() {
@@ -335,6 +518,20 @@ function init() {
   });
 
   initNavigation();
+
+  // Eventos de modo Focus
+  if (elements.focusTaskSelect) {
+    elements.focusTaskSelect.addEventListener('change', handleFocusTaskChange);
+  }
+  if (elements.focusStartPauseBtn) {
+    elements.focusStartPauseBtn.addEventListener('click', toggleFocusTimer);
+  }
+  if (elements.focusResetBtn) {
+    elements.focusResetBtn.addEventListener('click', resetFocusTimer);
+  }
+
+  updateFocusTimerDisplay();
+  updateFocusTaskOptions();
 }
 
 document.addEventListener('DOMContentLoaded', init);
