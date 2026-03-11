@@ -39,16 +39,14 @@
           type="button">
           Focus / Hoy
         </button>
-        <!-- Más adelante: Agenda / Historial / Ajustes -->
       </nav>
 
-      <!-- Mini onboarding en el lateral cuando no hay tareas -->
       <div class="nav-onboarding">
         <p class="nav-onboarding-title">Cómo usarlo</p>
         <ol>
           <li>Guarda un enlace o tarea en la Bandeja.</li>
-          <li>Organiza qué harás hoy.</li>
-          <li>Pasa a Focus y trabaja sin distracciones.</li>
+          <li>Elige qué harás hoy.</li>
+          <li>Entra en Focus y trabaja 30 minutos.</li>
         </ol>
       </div>
     </aside>
@@ -81,7 +79,7 @@
       </header>
 
       <main class="app-main">
-        <!-- BARRA DE RESUMEN (visible en ambas vistas) -->
+        <!-- BARRA DE RESUMEN -->
         <section class="summary-bar" aria-label="Resumen de tareas">
           <div class="summary-item">
             <span class="summary-label">Pendientes</span>
@@ -163,8 +161,8 @@
                 </div>
                 <div class="cards-helper">
                   <p>
-                    Cuando tengas varias tareas, podrás enviar algunas a
-                    <strong>Focus / Hoy</strong> para hacerlas con temporizador.
+                    Cuando tengas varias tareas, elige una en <strong>Focus / Hoy</strong>
+                    para hacer una sesión de 30 minutos sin distracciones.
                   </p>
                 </div>
               </div>
@@ -173,7 +171,6 @@
                 <!-- Tarjetas generadas por JS -->
               </div>
 
-              <!-- Estado vacío visual cuando no hay tarjetas -->
               <div id="emptyState" class="empty-state" aria-hidden="true">
                 <h3>Empieza guardando tu primera tarea</h3>
                 <p>
@@ -192,22 +189,57 @@
 
         <!-- VISTA 2: FOCUS / HOY -->
         <section id="view-focus" class="view" aria-label="Modo foco">
-          <div class="focus-placeholder">
-            <h2>Modo Focus / Hoy</h2>
-            <p>
-              Aquí podrás elegir una o varias tareas de tu bandeja
-              y empezar una sesión de enfoque con temporizador
-              y menos distracciones.
-            </p>
-            <p>
-              Próximo paso: convertiremos esta vista en una pantalla limpia
-              con cuenta atrás, barra de progreso y botón para marcar la tarea
-              como completada.
-            </p>
-            <p class="focus-next-step">
-              Para preparar el terreno, sigue llenando tu bandeja y
-              mantén tiempos estimados realistas.
-            </p>
+          <div class="focus-layout">
+            <header class="focus-header">
+              <div>
+                <h2>Modo Focus / Hoy</h2>
+                <p>Elige una tarea pendiente y concéntrate 30 minutos solo en ella.</p>
+              </div>
+              <div class="focus-task-selector">
+                <label for="focusTaskSelect">Tarea para esta sesión</label>
+                <select id="focusTaskSelect">
+                  <option value="">Selecciona una tarea pendiente…</option>
+                </select>
+              </div>
+            </header>
+
+            <section class="focus-main">
+              <div class="focus-task-card" id="focusTaskCard">
+                <p class="focus-empty">
+                  Aún no has seleccionado ninguna tarea.
+                  Elige una arriba para preparar tu sesión.
+                </p>
+                <div class="focus-task-content" id="focusTaskContent" hidden>
+                  <h3 id="focusTaskTitle"></h3>
+                  <p id="focusTaskUrl" class="focus-task-url"></p>
+                  <div class="focus-task-meta">
+                    <span id="focusTaskCategory" class="pill pill-focus-category"></span>
+                    <span id="focusTaskTime" class="pill pill-focus-time"></span>
+                  </div>
+                  <button id="focusOpenBtn" class="btn btn-ghost focus-open-btn" type="button">
+                    Abrir enlace
+                  </button>
+                </div>
+              </div>
+
+              <div class="focus-timer-card">
+                <div class="focus-timer-display" id="focusTimerDisplay">
+                  30:00
+                </div>
+                <div class="focus-timer-controls">
+                  <button id="focusStartPauseBtn" class="btn btn-primary" type="button">
+                    Iniciar sesión
+                  </button>
+                  <button id="focusResetBtn" class="btn btn-ghost" type="button">
+                    Reiniciar
+                  </button>
+                </div>
+                <p class="focus-timer-helper">
+                  Mantén la atención en esta tarea durante 30 minutos.
+                  Al terminar podrás marcarla como completada.
+                </p>
+              </div>
+            </section>
           </div>
         </section>
       </main>
