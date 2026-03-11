@@ -19,6 +19,7 @@ const elements = {
   clearCompletedBtn: document.getElementById('clearCompletedBtn'),
   themeToggle: document.getElementById('themeToggle'),
   addCardBtn: document.getElementById('addCardBtn'),
+  emptyState: document.getElementById('emptyState'),
 };
 
 const viewElements = {
@@ -122,9 +123,13 @@ function render() {
     );
   });
 
-  if (filtered.length === 0) {
+  // Subtítulo contextual
+  if (filtered.length === 0 && cards.length === 0 && elements.emptyState) {
     elements.cardsSubtitle.textContent =
       'Tu mente está libre. Guarda algo que quieras hacer cuando tengas tiempo ✨';
+  } else if (filtered.length === 0 && cards.length > 0) {
+    elements.cardsSubtitle.textContent =
+      'No hay resultados para ese filtro. Prueba con otra palabra o categoría.';
   } else {
     elements.cardsSubtitle.textContent = `Tienes ${filtered.length} elemento(s) en tu bolsa de enlaces y tareas.`;
   }
@@ -137,7 +142,30 @@ function render() {
       elements.cardsGrid.appendChild(cardNode);
     });
 
+  updateEmptyState(filtered);
   updateSummary();
+}
+
+/* Mostrar / ocultar estado vacío de la bandeja */
+function updateEmptyState(filteredCards) {
+  if (!elements.emptyState) return;
+
+  const hasAnyCard = cards.length > 0;
+  const hasFilteredCards = filteredCards.length > 0;
+
+  if (!hasAnyCard) {
+    // Sin ninguna tarjeta: mostrar mensaje inicial
+    elements.emptyState.style.display = 'block';
+    elements.emptyState.setAttribute('aria-hidden', 'false');
+  } else if (!hasFilteredCards) {
+    // Hay tarjetas pero el filtro no devuelve nada: ocultamos emptyState
+    elements.emptyState.style.display = 'none';
+    elements.emptyState.setAttribute('aria-hidden', 'true');
+  } else {
+    // Hay tarjetas y el filtro devuelve algo: ocultar estado vacío
+    elements.emptyState.style.display = 'none';
+    elements.emptyState.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function updateSummary() {
