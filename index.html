@@ -193,7 +193,9 @@
             <header class="focus-header">
               <div>
                 <h2>Modo Focus / Hoy</h2>
-                <p>Elige una tarea pendiente y concéntrate 30 minutos solo en ella.</p>
+                <p>
+                  Elige una tarea pendiente y concéntrate solo en ella durante 30 minutos.
+                </p>
               </div>
               <div class="focus-task-selector">
                 <label for="focusTaskSelect">Tarea para esta sesión</label>
@@ -235,9 +237,23 @@
                   </button>
                 </div>
                 <p class="focus-timer-helper">
-                  Mantén la atención en esta tarea durante 30 minutos.
-                  Al terminar podrás marcarla como completada.
+                  Cuando estés listo, pulsa “Iniciar sesión” y evita cambiar de tarea.
                 </p>
+
+                <!-- Panel de resultado al terminar -->
+                <div id="focusResultPanel" class="focus-result" hidden>
+                  <p id="focusResultMessage">
+                    Sesión de 30 minutos terminada. ¿Qué quieres hacer con esta tarea?
+                  </p>
+                  <div class="focus-result-actions">
+                    <button id="focusMarkDoneBtn" class="btn btn-primary" type="button">
+                      Marcar como completada
+                    </button>
+                    <button id="focusAnotherBtn" class="btn btn-ghost" type="button">
+                      Otra sesión de 30 min
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
@@ -275,21 +291,20 @@
         </div>
       </div>
       <div class="card-footer">
-  <button class="btn-link card-focus-btn" type="button">
-    Focus 30 min
-  </button>
-  <span class="card-footer-spacer"></span>
-  <button class="btn-link card-open-btn" type="button">
-    Abrir
-  </button>
-  <button class="btn-link card-delete-btn" type="button">
-    Borrar
-  </button>
-</div>
+        <button class="btn-link card-focus-btn" type="button">
+          Focus 30 min
+        </button>
+        <span class="card-footer-spacer"></span>
+        <button class="btn-link card-open-btn" type="button">
+          Abrir
+        </button>
+        <button class="btn-link card-delete-btn" type="button">
+          Borrar
+        </button>
+      </div>
     </article>
   </template>
 
   <script src="app.js"></script>
 </body>
 </html>
-
