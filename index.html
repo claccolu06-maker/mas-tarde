@@ -39,6 +39,12 @@
           type="button">
           Focus / Hoy
         </button>
+        <button
+          class="nav-item"
+          data-view="history"
+          type="button">
+          Historial
+        </button>
       </nav>
 
       <div class="nav-onboarding">
@@ -191,10 +197,13 @@
         <section id="view-focus" class="view" aria-label="Modo foco">
           <div class="focus-layout">
             <header class="focus-header">
-              <div>
+              <div class="focus-header-main">
                 <h2>Modo Focus / Hoy</h2>
                 <p>
                   Elige una tarea pendiente y concéntrate solo en ella durante 30 minutos.
+                </p>
+                <p id="focusNowLabel" class="focus-now-label" hidden>
+                  Ahora: <span id="focusNowTitle"></span>
                 </p>
               </div>
               <div class="focus-task-selector">
@@ -257,6 +266,55 @@
               </div>
             </section>
           </div>
+        </section>
+
+        <!-- VISTA 3: HISTORIAL -->
+        <section id="view-history" class="view" aria-label="Historial de tareas completadas">
+          <section class="history-layout">
+            <header class="history-header">
+              <div>
+                <h2>Historial</h2>
+                <p>
+                  Revisa lo que ya has hecho y cuánto foco has acumulado.
+                </p>
+              </div>
+              <div class="history-summary">
+                <div class="history-summary-item">
+                  <span class="history-summary-label">Sesiones Focus esta semana</span>
+                  <span id="historySessionsCount" class="history-summary-value">0</span>
+                </div>
+                <div class="history-summary-item">
+                  <span class="history-summary-label">Minutos de foco acumulados</span>
+                  <span id="historyMinutesTotal" class="history-summary-value">0 min</span>
+                </div>
+              </div>
+            </header>
+
+            <section class="history-table-section">
+              <header class="history-table-header">
+                <h3>Tareas completadas</h3>
+                <p id="historySubtitle" class="history-subtitle">
+                  Aún no has completado ninguna tarea. Cuando marques tareas como hechas aparecerán aquí.
+                </p>
+              </header>
+
+              <div class="history-table-wrapper">
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Título</th>
+                      <th>Categoría</th>
+                      <th>Fecha</th>
+                      <th>Tiempo estimado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyTableBody">
+                    <!-- Filas generadas por JS -->
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </section>
         </section>
       </main>
 
