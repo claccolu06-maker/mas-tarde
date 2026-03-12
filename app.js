@@ -33,6 +33,9 @@ const elements = {
   focusTimerDisplay: document.getElementById('focusTimerDisplay'),
   focusStartPauseBtn: document.getElementById('focusStartPauseBtn'),
   focusResetBtn: document.getElementById('focusResetBtn'),
+  focusResultPanel: document.getElementById('focusResultPanel'),
+  focusMarkDoneBtn: document.getElementById('focusMarkDoneBtn'),
+  focusAnotherBtn: document.getElementById('focusAnotherBtn'),
 };
 
 const viewElements = {
@@ -380,7 +383,7 @@ function handleFocusTaskChange() {
   if (!focusSelectedId) {
     clearFocusTaskDetails();
     resetFocusTimer();
-    render(); // quitar resaltado si no hay tarea seleccionada
+    render();
     return;
   }
 
@@ -406,7 +409,7 @@ function handleFocusTaskChange() {
   };
 
   resetFocusTimer();
-  render(); // repintar bandeja para marcar tarjeta activa
+  render();
 }
 
 function clearFocusTaskDetails() {
@@ -433,6 +436,16 @@ function updateFocusTimerDisplay() {
   elements.focusTimerDisplay.textContent = formatTime(focusRemainingSeconds);
 }
 
+function hideFocusResultPanel() {
+  if (!elements.focusResultPanel) return;
+  elements.focusResultPanel.hidden = true;
+}
+
+function showFocusResultPanel() {
+  if (!elements.focusResultPanel) return;
+  elements.focusResultPanel.hidden = false;
+}
+
 function resetFocusTimer() {
   stopFocusTimer();
   focusRemainingSeconds = FOCUS_DURATION_SECONDS;
@@ -440,6 +453,7 @@ function resetFocusTimer() {
   if (elements.focusStartPauseBtn) {
     elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
   }
+  hideFocusResultPanel();
 }
 
 function tickFocusTimer() {
@@ -464,6 +478,7 @@ function startFocusTimer() {
   if (elements.focusStartPauseBtn) {
     elements.focusStartPauseBtn.textContent = 'Pausar';
   }
+  hideFocusResultPanel();
 }
 
 function stopFocusTimer() {
@@ -493,27 +508,26 @@ function handleFocusSessionEnd() {
   if (!focusSelectedId) return;
   const card = cards.find((c) => c.id === focusSelectedId);
   if (!card) return;
+  showFocusResultPanel();
+}
 
-  const markDone = confirm(
-    'Has terminado una sesión de 30 minutos.\n\n¿Quieres marcar esta tarea como completada?'
-  );
+function handleFocusMarkDone() {
+  if (!focusSelectedId) return;
+  const card = cards.find((c) => c.id === focusSelectedId);
+  if (!card) return;
 
-  if (markDone) {
-    card.completed = true;
-    card.completedAt = Date.now();
-    saveCards();
-    render();
-    updateFocusTaskOptions();
-    clearFocusTaskDetails();
-  } else {
-    const moreTime = confirm('¿Quieres reiniciar el temporizador para otros 30 minutos?');
-    if (moreTime) {
-      resetFocusTimer();
-      startFocusTimer();
-    } else {
-      resetFocusTimer();
-    }
-  }
+  card.completed = true;
+  card.completedAt = Date.now();
+  saveCards();
+  render();
+  updateFocusTaskOptions();
+  clearFocusTaskDetails();
+  resetFocusTimer();
+}
+
+function handleFocusAnotherSession() {
+  resetFocusTimer();
+  startFocusTimer();
 }
 
 /* Iniciar Focus desde una tarjeta de la bandeja */
@@ -524,15 +538,12 @@ function startFocusSessionFromCard(id) {
 
   focusSelectedId = id;
 
-  // Cambiar a vista Focus
   switchView('focus');
 
-  // Seleccionar en el dropdown
   if (elements.focusTaskSelect) {
     elements.focusTaskSelect.value = id;
   }
 
-  // Actualizar detalles y temporizador
   handleFocusTaskChange();
   resetFocusTimer();
 
@@ -558,7 +569,6 @@ function init() {
 
   initNavigation();
 
-  // Eventos de modo Focus
   if (elements.focusTaskSelect) {
     elements.focusTaskSelect.addEventListener('change', handleFocusTaskChange);
   }
@@ -567,6 +577,12 @@ function init() {
   }
   if (elements.focusResetBtn) {
     elements.focusResetBtn.addEventListener('click', resetFocusTimer);
+  }
+  if (elements.focusMarkDoneBtn) {
+    elements.focusMarkDoneBtn.addEventListener('click', handleFocusMarkDone);
+  }
+  if (elements.focusAnotherBtn) {
+    elements.focusAnotherBtn.addEventListener('click', handleFocusAnotherSession);
   }
 
   updateFocusTimerDisplay();
