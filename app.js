@@ -36,11 +36,20 @@ const elements = {
   focusResultPanel: document.getElementById('focusResultPanel'),
   focusMarkDoneBtn: document.getElementById('focusMarkDoneBtn'),
   focusAnotherBtn: document.getElementById('focusAnotherBtn'),
+  focusNowLabel: document.getElementById('focusNowLabel'),
+  focusNowTitle: document.getElementById('focusNowTitle'),
+
+  // Historial
+  historyTableBody: document.getElementById('historyTableBody'),
+  historySubtitle: document.getElementById('historySubtitle'),
+  historySessionsCount: document.getElementById('historySessionsCount'),
+  historyMinutesTotal: document.getElementById('historyMinutesTotal'),
 };
 
 const viewElements = {
   inbox: document.getElementById('view-inbox'),
   focus: document.getElementById('view-focus'),
+  history: document.getElementById('view-history'),
 };
 
 const navButtons = document.querySelectorAll('.nav-item[data-view]');
@@ -65,7 +74,7 @@ function saveCards() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
 
-/* ===== RENDER TARJETAS ===== */
+/* ===== HELPERS GENERALES ===== */
 
 function categoryLabel(cat) {
   switch (cat) {
@@ -81,6 +90,23 @@ function categoryLabel(cat) {
       return 'Otro';
   }
 }
+
+function formatDateTime(timestamp) {
+  if (!timestamp) return '';
+  const d = new Date(timestamp);
+  const date = d.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
+  const time = d.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${date} · ${time}`;
+}
+
+/* ===== RENDER TARJETAS ===== */
 
 function createCard({ id, url, title, category, estimatedTime, completed }) {
   const node = elements.cardTemplate.content.firstElementChild.cloneNode(true);
@@ -171,6 +197,7 @@ function render() {
   updateEmptyState(filtered);
   updateSummary();
   updateFocusTaskOptions();
+  updateHistoryView();
 }
 
 /* Estado vacío */
@@ -214,6 +241,93 @@ function updateSummary() {
   } else {
     elements.footerSummary.textContent = `Tienes ${pending.length} tarea(s) pendiente(s). Elige una corta y empieza.`;
   }
+}
+
+/* ===== HISTORIAL ===== */
+
+function isThisWeek(timestamp) {
+  if (!timestamp) return false;
+  const d = new Date(timestamp);
+  const now = new Date();
+
+  const currentDay = now.getDay();
+  const diffToMonday = currentDay === 0 ? 6 : currentDay - 1;
+  const monday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - diffToMonday
+  );
+  monday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 7);
+
+  return d >= monday && d < sunday;
+}
+
+function updateHistoryView() {
+  if (!elements.historyTableBody || !elements.historySubtitle) return;
+
+  const completed = cards
+    .filter((c) => c.completed && c.completedAt)
+    .sort((a, b) => b.completedAt - a.completedAt);
+
+  elements.historyTableBody.innerHTML = '';
+
+  if (completed.length === 0) {
+    elements.historySubtitle.textContent =
+      'Aún no has completado ninguna tarea. Cuando marques tareas como hechas aparecerán aquí.';
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.className = 'history-table-empty';
+    cell.textContent = 'Sin tareas completadas todavía.';
+    row.appendChild(cell);
+    elements.historyTableBody.appendChild(row);
+  } else {
+    elements.historySubtitle.textContent = `Has completado ${completed.length} tarea(s) en total.`;
+    completed.forEach((card) => {
+      const tr = document.createElement('tr');
+
+      const tdTitle = document.createElement('td');
+      tdTitle.className = 'history-table-title';
+      tdTitle.textContent = card.title || card.url || '(Sin título)';
+
+      const tdCategory = document.createElement('td');
+      tdCategory.textContent = categoryLabel(card.category);
+
+      const tdDate = document.createElement('td');
+      tdDate.textContent = formatDateTime(card.completedAt);
+
+      const tdTime = document.createElement('td');
+      tdTime.textContent = `${card.estimatedTime || 0} min`;
+
+      tr.appendChild(tdTitle);
+      tr.appendChild(tdCategory);
+      tr.appendChild(tdDate);
+      tr.appendChild(tdTime);
+
+      elements.historyTableBody.appendChild(tr);
+    });
+  }
+
+  updateHistorySummary(completed);
+}
+
+function updateHistorySummary(completedCards) {
+  if (!elements.historySessionsCount || !elements.historyMinutesTotal) return;
+
+  const totalMinutes = completedCards.reduce(
+    (sum, c) => sum + (c.estimatedTime || 0),
+    0
+  );
+
+  const sessionsThisWeek = completedCards.filter((c) =>
+    isThisWeek(c.completedAt)
+  ).length;
+
+  elements.historySessionsCount.textContent = sessionsThisWeek;
+  elements.historyMinutesTotal.textContent = `${totalMinutes} min`;
 }
 
 /* ===== CRUD ===== */
@@ -377,6 +491,19 @@ function updateFocusTaskOptions() {
   }
 }
 
+function updateFocusNowLabel(card) {
+  if (!elements.focusNowLabel || !elements.focusNowTitle) return;
+
+  if (!card) {
+    elements.focusNowLabel.hidden = true;
+    elements.focusNowTitle.textContent = '';
+    return;
+  }
+
+  elements.focusNowTitle.textContent = card.title || card.url || '(Sin título)';
+  elements.focusNowLabel.hidden = false;
+}
+
 function handleFocusTaskChange() {
   const id = elements.focusTaskSelect.value;
   focusSelectedId = id || null;
@@ -408,6 +535,7 @@ function handleFocusTaskChange() {
     window.open(card.url, '_blank', 'noopener');
   };
 
+  updateFocusNowLabel(card);
   resetFocusTimer();
   render();
 }
@@ -421,6 +549,7 @@ function clearFocusTaskDetails() {
   elements.focusTaskUrl.textContent = '';
   elements.focusTaskCategory.textContent = '';
   elements.focusTaskTime.textContent = '';
+  updateFocusNowLabel(null);
 }
 
 function formatTime(seconds) {
@@ -444,6 +573,18 @@ function hideFocusResultPanel() {
 function showFocusResultPanel() {
   if (!elements.focusResultPanel) return;
   elements.focusResultPanel.hidden = false;
+}
+
+function setFocusRunningVisual(isRunning) {
+  if (!elements.focusTimerDisplay) return;
+  const card = elements.focusTimerDisplay.closest('.focus-timer-card');
+  if (isRunning) {
+    if (card) card.classList.add('focus-running');
+    elements.focusTimerDisplay.classList.add('focus-running');
+  } else {
+    if (card) card.classList.remove('focus-running');
+    elements.focusTimerDisplay.classList.remove('focus-running');
+  }
 }
 
 function resetFocusTimer() {
@@ -479,6 +620,7 @@ function startFocusTimer() {
     elements.focusStartPauseBtn.textContent = 'Pausar';
   }
   hideFocusResultPanel();
+  setFocusRunningVisual(true);
 }
 
 function stopFocusTimer() {
@@ -487,6 +629,7 @@ function stopFocusTimer() {
     clearInterval(focusIntervalId);
     focusIntervalId = null;
   }
+  setFocusRunningVisual(false);
 }
 
 function toggleFocusTimer() {
@@ -587,6 +730,7 @@ function init() {
 
   updateFocusTimerDisplay();
   updateFocusTaskOptions();
+  updateHistoryView();
 }
 
 document.addEventListener('DOMContentLoaded', init);
