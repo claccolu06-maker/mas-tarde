@@ -218,3 +218,19 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ===== PIZARRA / AGENDA ===== */
+
+.board-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* …resto de .board-* hasta el último @media… */
+
+@media (max-width: 720px) {
+  .board-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
