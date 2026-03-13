@@ -44,11 +44,22 @@ const elements = {
   historySubtitle: document.getElementById('historySubtitle'),
   historySessionsCount: document.getElementById('historySessionsCount'),
   historyMinutesTotal: document.getElementById('historyMinutesTotal'),
+
+  // Pizarra
+  boardSomeday: document.getElementById('boardSomeday'),
+  boardWeek: document.getElementById('boardWeek'),
+  boardToday: document.getElementById('boardToday'),
+  boardDone: document.getElementById('boardDone'),
+  boardCountSomeday: document.getElementById('boardCountSomeday'),
+  boardCountWeek: document.getElementById('boardCountWeek'),
+  boardCountToday: document.getElementById('boardCountToday'),
+  boardCountDone: document.getElementById('boardCountDone'),
 };
 
 const viewElements = {
   inbox: document.getElementById('view-inbox'),
   focus: document.getElementById('view-focus'),
+  board: document.getElementById('view-board'),
   history: document.getElementById('view-history'),
 };
 
@@ -63,7 +74,12 @@ function loadCards() {
     return;
   }
   try {
-    cards = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    cards = parsed.map((c) => ({
+      bucket: 'inbox',
+      ...c,
+      bucket: c.bucket || 'inbox',
+    }));
   } catch (e) {
     console.error('Error al parsear LocalStorage:', e);
     cards = [];
@@ -106,7 +122,7 @@ function formatDateTime(timestamp) {
   return `${date} · ${time}`;
 }
 
-/* ===== RENDER TARJETAS ===== */
+/* ===== RENDER TARJETAS BANDEJA ===== */
 
 function createCard({ id, url, title, category, estimatedTime, completed }) {
   const node = elements.cardTemplate.content.firstElementChild.cloneNode(true);
@@ -132,7 +148,6 @@ function createCard({ id, url, title, category, estimatedTime, completed }) {
     node.classList.add('completed');
   }
 
-  // Marcar tarjeta activa en Focus
   if (focusSelectedId && focusSelectedId === id) {
     node.classList.add('focus-active');
   }
@@ -198,6 +213,7 @@ function render() {
   updateSummary();
   updateFocusTaskOptions();
   updateHistoryView();
+  renderBoard();
 }
 
 /* Estado vacío */
@@ -353,6 +369,7 @@ function addCardFromForm(event) {
     createdAt: Date.now(),
     completed: false,
     completedAt: null,
+    bucket: 'inbox',
   };
 
   cards.push(newCard);
@@ -375,6 +392,13 @@ function toggleCompleted(id) {
 
   card.completed = !card.completed;
   card.completedAt = card.completed ? Date.now() : null;
+
+  if (card.completed) {
+    card.bucket = 'done';
+  } else if (card.bucket === 'done') {
+    card.bucket = 'inbox';
+  }
+
   saveCards();
   render();
 }
@@ -431,7 +455,7 @@ function initTheme() {
 
 function switchView(target) {
   Object.values(viewElements).forEach((section) => {
-    section.classList.remove('view-active');
+    if (section) section.classList.remove('view-active');
   });
   navButtons.forEach((btn) => btn.classList.remove('nav-item-active'));
 
@@ -661,6 +685,7 @@ function handleFocusMarkDone() {
 
   card.completed = true;
   card.completedAt = Date.now();
+  card.bucket = 'done';
   saveCards();
   render();
   updateFocusTaskOptions();
@@ -692,6 +717,181 @@ function startFocusSessionFromCard(id) {
 
   if (elements.focusStartPauseBtn) {
     elements.focusStartPauseBtn.focus();
+  }
+}
+
+/* ===== PIZARRA / AGENDA ===== */
+
+function moveCardToBucket(id, bucket) {
+  const card = cards.find((c) => c.id === id);
+  if (!card) return;
+
+  if (bucket === 'today') {
+    const todayCount = cards.filter(
+      (c) => c.bucket === 'today' && !c.completed
+    ).length;
+    if (todayCount >= 3 && !card.completed) {
+      alert('Límite de 3 tareas en Hoy. Termina alguna antes de añadir otra.');
+      return;
+    }
+  }
+
+  card.bucket = bucket;
+  saveCards();
+  render();
+}
+
+function createBoardCard(card) {
+  const node = document.createElement('article');
+  node.className = 'board-card';
+  if (card.completed) {
+    node.classList.add('board-card-done');
+  }
+
+  const header = document.createElement('div');
+  header.className = 'board-card-header';
+
+  const titleEl = document.createElement('h4');
+  titleEl.className = 'board-card-title';
+  titleEl.textContent = card.title || card.url || '(Sin título)';
+
+  const timeEl = document.createElement('span');
+  timeEl.className = 'pill pill-time';
+  timeEl.textContent = `${card.estimatedTime || 0} min`;
+
+  header.appendChild(titleEl);
+  header.appendChild(timeEl);
+
+  const meta = document.createElement('div');
+  meta.className = 'board-card-meta';
+
+  const categoryEl = document.createElement('span');
+  categoryEl.className = 'pill pill-category';
+  categoryEl.textContent = categoryLabel(card.category);
+  categoryEl.dataset.category = card.category;
+
+  const infoEl = document.createElement('span');
+  infoEl.className = 'board-card-secondary';
+  infoEl.textContent = card.bucket === 'done'
+    ? formatDateTime(card.completedAt)
+    : 'Desde bandeja';
+
+  meta.appendChild(categoryEl);
+  meta.appendChild(infoEl);
+
+  const footer = document.createElement('div');
+  footer.className = 'board-card-footer';
+
+  const actionsLeft = document.createElement('div');
+  actionsLeft.className = 'board-card-actions';
+
+  const btnPrev = document.createElement('button');
+  btnPrev.type = 'button';
+  btnPrev.className = 'board-card-move-btn';
+  btnPrev.textContent = '←';
+  btnPrev.title = 'Mover a columna anterior';
+
+  const btnNext = document.createElement('button');
+  btnNext.type = 'button';
+  btnNext.className = 'board-card-move-btn';
+  btnNext.textContent = '→';
+  btnNext.title = 'Mover a columna siguiente';
+
+  actionsLeft.appendChild(btnPrev);
+  actionsLeft.appendChild(btnNext);
+
+  const actionsRight = document.createElement('div');
+  actionsRight.className = 'board-card-actions';
+
+  const btnFocus = document.createElement('button');
+  btnFocus.type = 'button';
+  btnFocus.className = 'board-card-focus-btn';
+  btnFocus.textContent = 'Focus 30 min';
+
+  actionsRight.appendChild(btnFocus);
+
+  footer.appendChild(actionsLeft);
+  footer.appendChild(actionsRight);
+
+  node.appendChild(header);
+  node.appendChild(meta);
+  node.appendChild(footer);
+
+  btnPrev.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const order = ['someday', 'week', 'today', 'done'];
+    const idx = order.indexOf(card.bucket || 'inbox');
+    if (idx <= 0) return;
+    moveCardToBucket(card.id, order[idx - 1]);
+  });
+
+  btnNext.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const order = ['someday', 'week', 'today', 'done'];
+    const idx = order.indexOf(card.bucket || 'inbox');
+    const nextIdx = idx === -1 ? 0 : idx + 1;
+    if (nextIdx >= order.length) return;
+    moveCardToBucket(card.id, order[nextIdx]);
+  });
+
+  btnFocus.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    startFocusSessionFromCard(card.id);
+  });
+
+  node.addEventListener('click', () => {
+    if (card.url) {
+      window.open(card.url, '_blank', 'noopener');
+    }
+  });
+
+  return node;
+}
+
+function renderBoard() {
+  if (
+    !elements.boardSomeday ||
+    !elements.boardWeek ||
+    !elements.boardToday ||
+    !elements.boardDone
+  ) {
+    return;
+  }
+
+  elements.boardSomeday.innerHTML = '';
+  elements.boardWeek.innerHTML = '';
+  elements.boardToday.innerHTML = '';
+  elements.boardDone.innerHTML = '';
+
+  const someday = cards.filter((c) => c.bucket === 'someday' && !c.completed);
+  const week = cards.filter((c) => c.bucket === 'week' && !c.completed);
+  const today = cards.filter((c) => c.bucket === 'today' && !c.completed);
+  const done = cards.filter((c) => c.bucket === 'done');
+
+  someday.forEach((card) => {
+    elements.boardSomeday.appendChild(createBoardCard(card));
+  });
+  week.forEach((card) => {
+    elements.boardWeek.appendChild(createBoardCard(card));
+  });
+  today.forEach((card) => {
+    elements.boardToday.appendChild(createBoardCard(card));
+  });
+  done.forEach((card) => {
+    elements.boardDone.appendChild(createBoardCard(card));
+  });
+
+  if (elements.boardCountSomeday) {
+    elements.boardCountSomeday.textContent = someday.length;
+  }
+  if (elements.boardCountWeek) {
+    elements.boardCountWeek.textContent = week.length;
+  }
+  if (elements.boardCountToday) {
+    elements.boardCountToday.textContent = today.length;
+  }
+  if (elements.boardCountDone) {
+    elements.boardCountDone.textContent = done.length;
   }
 }
 
