@@ -41,6 +41,12 @@
         </button>
         <button
           class="nav-item"
+          data-view="board"
+          type="button">
+          Pizarra / Agenda
+        </button>
+        <button
+          class="nav-item"
           data-view="history"
           type="button">
           Historial
@@ -51,7 +57,7 @@
         <p class="nav-onboarding-title">Cómo usarlo</p>
         <ol>
           <li>Guarda un enlace o tarea en la Bandeja.</li>
-          <li>Elige qué harás hoy.</li>
+          <li>Organiza la semana en la Pizarra.</li>
           <li>Entra en Focus y trabaja 30 minutos.</li>
         </ol>
       </div>
@@ -168,7 +174,7 @@
                 <div class="cards-helper">
                   <p>
                     Cuando tengas varias tareas, elige una en <strong>Focus / Hoy</strong>
-                    para hacer una sesión de 30 minutos sin distracciones.
+                    o pásala a la columna <strong>Hoy</strong> en la Pizarra para una sesión de 30 minutos.
                   </p>
                 </div>
               </div>
@@ -249,7 +255,6 @@
                   Cuando estés listo, pulsa “Iniciar sesión” y evita cambiar de tarea.
                 </p>
 
-                <!-- Panel de resultado al terminar -->
                 <div id="focusResultPanel" class="focus-result" hidden>
                   <p id="focusResultMessage">
                     Sesión de 30 minutos terminada. ¿Qué quieres hacer con esta tarea?
@@ -268,7 +273,73 @@
           </div>
         </section>
 
-        <!-- VISTA 3: HISTORIAL -->
+        <!-- VISTA 3: PIZARRA / AGENDA -->
+        <section id="view-board" class="view" aria-label="Pizarra / Agenda semanal">
+          <section class="board-layout">
+            <header class="board-header">
+              <div class="board-title-group">
+                <h2 class="board-title">Pizarra / Agenda</h2>
+                <p class="board-subtitle">
+                  Pasa tareas desde la Bandeja y decide qué va a Algún día, Esta semana y Hoy.
+                </p>
+              </div>
+              <div class="board-meta">
+                <span class="board-tag">Versión 1 · sin drag &amp; drop</span>
+              </div>
+            </header>
+
+            <div class="board-columns">
+              <!-- Algún día -->
+              <section class="board-column" aria-label="Algún día">
+                <header class="board-column-header">
+                  <h3>Algún día</h3>
+                  <span id="boardCountSomeday" class="board-column-counter">0</span>
+                </header>
+                <div id="boardSomeday" class="board-column-body">
+                  <!-- tarjetas someday -->
+                </div>
+              </section>
+
+              <!-- Esta semana -->
+              <section class="board-column" aria-label="Esta semana">
+                <header class="board-column-header">
+                  <h3>Esta semana</h3>
+                  <span id="boardCountWeek" class="board-column-counter">0</span>
+                </header>
+                <div id="boardWeek" class="board-column-body">
+                  <!-- tarjetas week -->
+                </div>
+              </section>
+
+              <!-- Hoy -->
+              <section class="board-column board-column-today" aria-label="Hoy">
+                <header class="board-column-header">
+                  <h3>
+                    Hoy
+                    <span class="board-column-wip">máx. 3</span>
+                  </h3>
+                  <span id="boardCountToday" class="board-column-counter">0</span>
+                </header>
+                <div id="boardToday" class="board-column-body">
+                  <!-- tarjetas today -->
+                </div>
+              </section>
+
+              <!-- Hecho -->
+              <section class="board-column board-column-done" aria-label="Hecho">
+                <header class="board-column-header">
+                  <h3>Hecho</h3>
+                  <span id="boardCountDone" class="board-column-counter">0</span>
+                </header>
+                <div id="boardDone" class="board-column-body board-column-body-done">
+                  <!-- tarjetas done -->
+                </div>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <!-- VISTA 4: HISTORIAL -->
         <section id="view-history" class="view" aria-label="Historial de tareas completadas">
           <section class="history-layout">
             <header class="history-header">
