@@ -67,13 +67,11 @@ const navButtons = document.querySelectorAll('.nav-item[data-view]');
 
 /* ===== HELPERS ===== */
 
-// IDs robustos
 const generateId = () =>
   crypto.randomUUID
     ? crypto.randomUUID()
     : Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-// Normalizar URLs
 const normalizeUrl = (url) =>
   /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
 
@@ -124,13 +122,13 @@ function createCard(card) {
   if (card.completed) node.classList.add('completed');
   if (focusSelectedId === card.id) node.classList.add('focus-active');
 
-  // Selector de bucket (Bandeja / Pizarra)
   const moveSelect = node.querySelector('.card-move-select');
   if (moveSelect) {
     moveSelect.value = card.bucket;
     moveSelect.addEventListener('change', (e) => {
       e.stopPropagation();
-      moveCardToBucket(card.id, e.target.value);
+      const value = e.target.value || 'inbox';
+      moveCardToBucket(card.id, value);
     });
   }
 
@@ -162,7 +160,9 @@ function createCard(card) {
       startFocusSessionFromCard(card.id);
     });
 
-  node.addEventListener('click', () => window.open(card.url, '_blank', 'noopener'));
+  node.addEventListener('click', () =>
+    window.open(card.url, '_blank', 'noopener'),
+  );
 
   return node;
 }
@@ -170,7 +170,6 @@ function createCard(card) {
 function render() {
   const term = elements.searchInput.value.trim().toLowerCase();
 
-  // La Bandeja muestra solo bucket === 'inbox'
   const filtered = cards.filter(
     (c) =>
       c.bucket === 'inbox' &&
@@ -200,26 +199,62 @@ function updateEmptyState(filteredCards) {
 
   if (inboxEmpty) {
     elements.cardsSubtitle.textContent =
-      'Tu bandeja está vacía. Guarda algo que quieras hacer.';
+      'Tu bandeja está vacía. Guarda algo que quieras hacer cuando tengas tiempo.';
   } else if (filteredCards.length === 0) {
     elements.cardsSubtitle.textContent =
       'No hay resultados con ese filtro en tu bandeja.';
   } else {
-    elements.cardsSubtitle.textContent = `Tienes ${filteredCards.length} elemento(s) en tu bandeja.`;
+    elements.cardsSubtitle.textContent =
+      `Tienes ${filteredCards.length} elemento(s) en tu bandeja. Cuando tengas un momento, pásalos a la Pizarra para planificar.`;
   }
+}
+
+function computeFocusStreakDays(completedCards) {
+  if (!completedCards.length) return 0;
+
+  const daysSet = new Set(
+    completedCards.map((c) => {
+      const d = new Date(c.completedAt);
+      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }),
+  );
+
+  const days = Array.from(daysSet)
+    .map((key) => {
+      const [y, m, d] = key.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      date.setHours(0, 0, 0, 0);
+      return date.getTime();
+    })
+    .sort((a, b) => a - b);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let streak = 0;
+  let currentDayTs = today.getTime();
+
+  while (days.includes(currentDayTs)) {
+    streak += 1;
+    currentDayTs -= 24 * 60 * 60 * 1000;
+  }
+
+  return streak;
 }
 
 function updateSummary() {
   const pending = cards.filter((c) => !c.completed);
   const completed = cards.filter((c) => c.completed);
   const totalTime = pending.reduce((sum, c) => sum + (c.estimatedTime || 0), 0);
-  const todayCount = cards.filter((c) => c.bucket === 'today' && !c.completed).length;
+  const todayCount = cards.filter((c) => c.bucket === 'today' && !c.completed)
+    .length;
 
   elements.pendingCount.textContent = pending.length;
   elements.completedCount.textContent = completed.length;
   elements.totalTime.textContent = `${totalTime} min`;
 
   if (!elements.footerSummary) return;
+
+  const streakDays = computeFocusStreakDays(completed);
 
   if (cards.length === 0) {
     elements.footerSummary.textContent =
@@ -231,7 +266,11 @@ function updateSummary() {
     elements.footerSummary.textContent =
       'Tienes tareas pendientes. Pasa 1–3 a “Hoy” en la Pizarra y haz una sesión de Focus.';
   } else {
-    elements.footerSummary.textContent = `Tienes ${pending.length} tarea(s) pendiente(s), de las cuales ${todayCount} están en Hoy. Elige una y empieza.`;
+    const streakText =
+      streakDays > 0 ? ` Llevas una racha de ${streakDays} día(s) con foco.` : '';
+    elements.footerSummary.textContent =
+      `Tienes ${pending.length} tarea(s) pendiente(s), de las cuales ${todayCount} están en Hoy.` +
+      streakText;
   }
 }
 
@@ -317,7 +356,7 @@ function switchView(target) {
     ?.classList.add('nav-item-active');
 }
 
-/* ===== MODO FOCUS (30 MIN) ===== */
+/* ===== MODO FOCUS ===== */
 
 const FOCUS_DURATION_SECONDS = 30 * 60;
 let focusSelectedId = null;
@@ -330,11 +369,11 @@ function updateFocusTaskOptions() {
   const pending = cards.filter((c) => !c.completed);
   elements.focusTaskSelect.innerHTML =
     '<option value="">Selecciona una tarea pendiente…</option>';
-  pending.forEach((c) => {
+  pending.forEach((c) =>
     elements.focusTaskSelect.appendChild(
       new Option(c.title || c.url, c.id),
-    );
-  });
+    ),
+  );
 
   if (pending.some((c) => c.id === focusSelectedId)) {
     elements.focusTaskSelect.value = focusSelectedId;
@@ -443,7 +482,6 @@ function startFocusSessionFromCard(id) {
   const card = cards.find((c) => c.id === id && !c.completed);
   if (!card) return;
 
-  // Si no está en Hoy ni hecho, lo movemos a Hoy respetando el límite
   if (card.bucket !== 'today' && card.bucket !== 'done') {
     const todayCount = cards.filter(
       (c) => c.bucket === 'today' && !c.completed,
@@ -464,7 +502,7 @@ function startFocusSessionFromCard(id) {
   handleFocusTaskChange();
 }
 
-/* ===== PIZARRA (BOARD) ===== */
+/* ===== PIZARRA ===== */
 
 function moveCardToBucket(id, bucket) {
   const card = cards.find((c) => c.id === id);
@@ -484,7 +522,6 @@ function moveCardToBucket(id, bucket) {
     }
   }
 
-  // Si viene de inbox o de un bucket fuera del flujo, lo llevamos a la primera columna
   if (!flow.includes(bucket)) {
     bucket = 'someday';
   }
@@ -497,6 +534,8 @@ function moveCardToBucket(id, bucket) {
 function createBoardCard(card) {
   const node = document.createElement('article');
   node.className = `board-card ${card.completed ? 'board-card-done' : ''}`;
+  node.draggable = true;
+  node.dataset.cardId = card.id;
 
   node.innerHTML = `
     <div class="board-card-header">
@@ -516,6 +555,15 @@ function createBoardCard(card) {
       <button class="board-card-focus-btn" type="button">Focus</button>
     </div>
   `;
+
+  node.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', card.id);
+    node.classList.add('dragging');
+  });
+
+  node.addEventListener('dragend', () => {
+    node.classList.remove('dragging');
+  });
 
   const flow = ['someday', 'week', 'today', 'done'];
   const currentIdx = flow.indexOf(card.bucket);
@@ -567,6 +615,43 @@ function renderBoard() {
     const bucketCards = cards.filter((c) => c.bucket === bucket);
     bucketCards.forEach((c) => bodyEl.appendChild(createBoardCard(c)));
     if (countEl) countEl.textContent = bucketCards.length;
+
+    if (bucketCards.length === 0) {
+      const hintText = bodyEl.dataset.emptyText;
+      if (hintText) {
+        const p = document.createElement('p');
+        p.className = 'board-column-empty-hint';
+        p.textContent = hintText;
+        bodyEl.appendChild(p);
+      }
+    }
+  });
+}
+
+function initBoardDragAndDrop() {
+  const columnBodies = document.querySelectorAll('.board-column-body');
+
+  columnBodies.forEach((col) => {
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      col.classList.add('drag-over');
+    });
+
+    col.addEventListener('dragleave', () => {
+      col.classList.remove('drag-over');
+    });
+
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+
+      const cardId = e.dataTransfer.getData('text/plain');
+      const targetBucket = col.dataset.bucket;
+
+      if (!cardId || !targetBucket) return;
+
+      moveCardToBucket(cardId, targetBucket);
+    });
   });
 }
 
@@ -605,6 +690,12 @@ function updateHistoryView() {
     (c) => c.completedAt && c.completedAt > weekAgo,
   ).length;
   elements.historySessionsCount.textContent = sessionsThisWeek;
+
+  const streakDays = computeFocusStreakDays(completed);
+  const streakEl = document.getElementById('historyStreakDays');
+  if (streakEl) {
+    streakEl.textContent = streakDays === 1 ? '1 día' : `${streakDays} días`;
+  }
 }
 
 /* ===== INIT ===== */
@@ -631,6 +722,8 @@ function init() {
     resetFocusTimer();
     startFocusTimer();
   });
+
+  initBoardDragAndDrop();
 
   switchView('inbox');
   render();
