@@ -429,22 +429,22 @@ function tickFocusTimer() {
   const s = (focusRemainingSeconds % 60).toString().padStart(2, '0');
   elements.focusTimerDisplay.textContent = `${m}:${s}`;
 
- if (focusRemainingSeconds <= 0) {
-  stopFocusTimer();
-  elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
-  elements.focusResultPanel.hidden = false;
+  if (focusRemainingSeconds <= 0) {
+    stopFocusTimer();
+    elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
+    elements.focusResultPanel.hidden = false;
 
-  // NUEVO: sumar una sesión de foco a la tarea actual
-  if (focusSelectedId) {
-    const card = cards.find((c) => c.id === focusSelectedId);
-    if (card) {
-      card.focusSessions = (card.focusSessions || 0) + 1;
-      saveCards();
-      updateHistoryView(); // para que refleje datos agregados
+    // NUEVO: sumar una sesión de foco a la tarea actual
+    if (focusSelectedId) {
+      const card = cards.find((c) => c.id === focusSelectedId);
+      if (card) {
+        card.focusSessions = (card.focusSessions || 0) + 1;
+        saveCards();
+        updateHistoryView(); // para que refleje datos agregados
+      }
     }
   }
-}
-
+}  // ← ESTA llave te falta
 
 function toggleFocusTimer() {
   if (!focusSelectedId) {
