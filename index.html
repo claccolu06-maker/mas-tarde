@@ -8,7 +8,9 @@
   <!-- Tipografía Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
   <link rel="stylesheet" href="main.css">
 </head>
@@ -54,10 +56,17 @@
         <div class="header-actions">
           <div class="search-box">
             <label class="sr-only" for="searchInput">Buscar tareas</label>
-            <input id="searchInput" type="search" placeholder="Buscar título o categoría…">
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar título o categoría…">
           </div>
-          <button id="themeToggle" class="btn btn-ghost" type="button" aria-label="Cambiar tema">Tema</button>
-          <button id="addCardBtn" class="btn btn-primary" type="button">+ Añadir tarea</button>
+          <button id="themeToggle" class="btn btn-ghost" type="button" aria-label="Cambiar tema">
+            Tema
+          </button>
+          <button id="addCardBtn" class="btn btn-primary" type="button">
+            + Añadir tarea
+          </button>
         </div>
       </header>
 
@@ -85,10 +94,19 @@
               <h2 class="sidebar-title">Añade algo para “más tarde”</h2>
               <form id="cardForm" class="card-form" autocomplete="off">
                 <label class="form-label" for="urlInput">URL</label>
-                <input id="urlInput" name="url" type="text" required placeholder="ej. youtube.com/...">
+                <input
+                  id="urlInput"
+                  name="url"
+                  type="text"
+                  required
+                  placeholder="https://… o solo dominio (youtube.com, medium.com, etc.)">
 
                 <label class="form-label" for="titleInput">Título (opcional)</label>
-                <input id="titleInput" name="title" type="text" placeholder="¿De qué trata?">
+                <input
+                  id="titleInput"
+                  name="title"
+                  type="text"
+                  placeholder="¿De qué trata?">
 
                 <label class="form-label" for="categorySelect">Categoría</label>
                 <select id="categorySelect" name="category" required>
@@ -100,9 +118,18 @@
                 </select>
 
                 <label class="form-label" for="timeInput">Tiempo (min)</label>
-                <input id="timeInput" name="estimatedTime" type="number" min="1" max="600" required placeholder="Ej: 30">
+                <input
+                  id="timeInput"
+                  name="estimatedTime"
+                  type="number"
+                  min="1"
+                  max="600"
+                  required
+                  placeholder="Ej: 30">
 
-                <button type="submit" class="btn btn-primary btn-full">Guardar en bandeja</button>
+                <button type="submit" class="btn btn-primary btn-full">
+                  Guardar en bandeja
+                </button>
               </form>
             </aside>
 
@@ -110,10 +137,14 @@
               <div class="cards-header">
                 <div>
                   <h2>Tu bolsa de enlaces y tareas</h2>
-                  <p id="cardsSubtitle" class="cards-subtitle">Tu mente está libre ✨</p>
+                  <p id="cardsSubtitle" class="cards-subtitle">
+                    Tu mente está libre ✨
+                  </p>
                 </div>
               </div>
+
               <div id="cardsGrid" class="cards-grid"></div>
+
               <div id="emptyState" class="empty-state" aria-hidden="true">
                 <h3>Empieza guardando tu primera tarea</h3>
                 <p>Usa el formulario de la izquierda para llenar tu bandeja.</p>
@@ -129,7 +160,9 @@
               <div class="focus-header-main">
                 <h2>Modo Focus / Hoy</h2>
                 <p>Concéntrate solo en una tarea durante 30 minutos.</p>
-                <p id="focusNowLabel" class="focus-now-label" hidden>Ahora: <span id="focusNowTitle"></span></p>
+                <p id="focusNowLabel" class="focus-now-label" hidden>
+                  Ahora: <span id="focusNowTitle"></span>
+                </p>
               </div>
               <div class="focus-task-selector">
                 <label for="focusTaskSelect">Tarea para esta sesión</label>
@@ -141,7 +174,9 @@
 
             <section class="focus-main">
               <div class="focus-task-card" id="focusTaskCard">
-                <p class="focus-empty">Elige una tarea arriba para comenzar.</p>
+                <p class="focus-empty">
+                  Elige una tarea arriba para comenzar.
+                </p>
                 <div class="focus-task-content" id="focusTaskContent" hidden>
                   <h3 id="focusTaskTitle"></h3>
                   <p id="focusTaskUrl" class="focus-task-url"></p>
@@ -149,22 +184,51 @@
                     <span id="focusTaskCategory" class="pill pill-focus-category"></span>
                     <span id="focusTaskTime" class="pill pill-focus-time"></span>
                   </div>
-                  <button id="focusOpenBtn" class="btn btn-ghost focus-open-btn" type="button">Abrir enlace</button>
+                  <button
+                    id="focusOpenBtn"
+                    class="btn btn-ghost focus-open-btn"
+                    type="button">
+                    Abrir enlace
+                  </button>
                 </div>
               </div>
 
               <div class="focus-timer-card">
-                <div class="focus-timer-display" id="focusTimerDisplay">30:00</div>
+                <div class="focus-timer-display" id="focusTimerDisplay">
+                  30:00
+                </div>
                 <div class="focus-timer-controls">
-                  <button id="focusStartPauseBtn" class="btn btn-primary" type="button">Iniciar sesión</button>
-                  <button id="focusResetBtn" class="btn btn-ghost" type="button">Reiniciar</button>
+                  <button
+                    id="focusStartPauseBtn"
+                    class="btn btn-primary"
+                    type="button">
+                    Iniciar sesión
+                  </button>
+                  <button
+                    id="focusResetBtn"
+                    class="btn btn-ghost"
+                    type="button">
+                    Reiniciar
+                  </button>
                 </div>
 
                 <div id="focusResultPanel" class="focus-result" hidden>
-                  <p id="focusResultMessage">¡Sesión terminada! ¿Qué hacemos ahora?</p>
+                  <p id="focusResultMessage">
+                    Sesión de 30 minutos terminada. Marca la tarea como completada o haz otra sesión con la misma tarea.
+                  </p>
                   <div class="focus-result-actions">
-                    <button id="focusMarkDoneBtn" class="btn btn-primary" type="button">Marcar completada</button>
-                    <button id="focusAnotherBtn" class="btn btn-ghost" type="button">Otros 30 min</button>
+                    <button
+                      id="focusMarkDoneBtn"
+                      class="btn btn-primary"
+                      type="button">
+                      Marcar completada
+                    </button>
+                    <button
+                      id="focusAnotherBtn"
+                      class="btn btn-ghost"
+                      type="button">
+                      Otra sesión con esta tarea
+                    </button>
                   </div>
                 </div>
               </div>
@@ -173,38 +237,123 @@
         </section>
 
         <!-- VISTA 3: PIZARRA / AGENDA -->
-        <section id="view-board" class="view" aria-label="Pizarra / Agenda semanal">
+        <section
+          id="view-board"
+          class="view"
+          aria-label="Pizarra / Agenda semanal">
           <section class="board-layout">
             <header class="board-header">
               <div class="board-title-group">
                 <h2 class="board-title">Pizarra / Agenda</h2>
-                <p class="board-subtitle">Organiza tus tareas visualmente.</p>
+                <p class="board-subtitle">
+                  Las nuevas tareas empiezan en la Bandeja. Usa el selector de cada tarjeta o las flechas para moverlas:
+                  <strong>Bandeja → Algún día → Esta semana → Hoy → Hecho</strong>.
+                </p>
               </div>
             </header>
 
             <div class="board-columns">
-              <section class="board-column"><header class="board-column-header"><h3>Algún día</h3><span id="boardCountSomeday" class="board-column-counter">0</span></header><div id="boardSomeday" class="board-column-body"></div></section>
-              <section class="board-column"><header class="board-column-header"><h3>Esta semana</h3><span id="boardCountWeek" class="board-column-counter">0</span></header><div id="boardWeek" class="board-column-body"></div></section>
-              <section class="board-column board-column-today"><header class="board-column-header"><h3>Hoy <span class="board-column-wip">máx. 3</span></h3><span id="boardCountToday" class="board-column-counter">0</span></header><div id="boardToday" class="board-column-body"></div></section>
-              <section class="board-column board-column-done"><header class="board-column-header"><h3>Hecho</h3><span id="boardCountDone" class="board-column-counter">0</span></header><div id="boardDone" class="board-column-body board-column-body-done"></div></section>
+              <!-- Algún día -->
+              <section class="board-column">
+                <header class="board-column-header">
+                  <h3>Algún día</h3>
+                  <span
+                    id="boardCountSomeday"
+                    class="board-column-counter">0</span>
+                </header>
+                <div
+                  id="boardSomeday"
+                  class="board-column-body"
+                  data-bucket="someday"
+                  data-empty-text="Ideas sin fecha fija. Pasa aquí lo que quieras hacer algún día."></div>
+              </section>
+
+              <!-- Esta semana -->
+              <section class="board-column">
+                <header class="board-column-header">
+                  <h3>Esta semana</h3>
+                  <span
+                    id="boardCountWeek"
+                    class="board-column-counter">0</span>
+                </header>
+                <div
+                  id="boardWeek"
+                  class="board-column-body"
+                  data-bucket="week"
+                  data-empty-text="Elige 3–7 tareas que te gustaría intentar hacer esta semana."></div>
+              </section>
+
+              <!-- Hoy -->
+              <section class="board-column board-column-today">
+                <header class="board-column-header">
+                  <h3>
+                    Hoy
+                    <span class="board-column-wip">máx. 3</span>
+                  </h3>
+                  <span
+                    id="boardCountToday"
+                    class="board-column-counter">0</span>
+                </header>
+                <div
+                  id="boardToday"
+                  class="board-column-body"
+                  data-bucket="today"
+                  data-empty-text="Pon aquí solo 1–3 tareas. Lo que realmente vas a tocar hoy."></div>
+              </section>
+
+              <!-- Hecho -->
+              <section class="board-column board-column-done">
+                <header class="board-column-header">
+                  <h3>Hecho</h3>
+                  <span
+                    id="boardCountDone"
+                    class="board-column-counter">0</span>
+                </header>
+                <div
+                  id="boardDone"
+                  class="board-column-body board-column-body-done"
+                  data-bucket="done"
+                  data-empty-text="Cuando completes algo, aparecerá aquí antes de ir al Historial."></div>
+              </section>
             </div>
           </section>
         </section>
 
         <!-- VISTA 4: HISTORIAL -->
-        <section id="view-history" class="view" aria-label="Historial de tareas completadas">
+        <section
+          id="view-history"
+          class="view"
+          aria-label="Historial de tareas completadas">
           <section class="history-layout">
             <header class="history-header">
               <h2>Historial</h2>
               <div class="history-summary">
-                <div class="history-summary-item"><span>Sesiones esta semana: </span><span id="historySessionsCount">0</span></div>
-                <div class="history-summary-item"><span>Minutos acumulados: </span><span id="historyMinutesTotal">0 min</span></div>
+                <div class="history-summary-item">
+                  <span>Sesiones esta semana: </span>
+                  <span id="historySessionsCount">0</span>
+                </div>
+                <div class="history-summary-item">
+                  <span>Minutos acumulados: </span>
+                  <span id="historyMinutesTotal">0 min</span>
+                </div>
+                <div class="history-summary-item">
+                  <span>Racha de días con foco: </span>
+                  <span id="historyStreakDays">0 días</span>
+                </div>
               </div>
             </header>
+
             <section class="history-table-section">
               <p id="historySubtitle" class="history-subtitle"></p>
               <table class="history-table">
-                <thead><tr><th>Título</th><th>Categoría</th><th>Fecha</th><th>Tiempo</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Título</th>
+                    <th>Categoría</th>
+                    <th>Fecha</th>
+                    <th>Tiempo</th>
+                  </tr>
+                </thead>
                 <tbody id="historyTableBody"></tbody>
               </table>
             </section>
@@ -213,20 +362,34 @@
       </main>
 
       <footer class="app-footer">
-        <div class="footer-left"><span id="footerSummary"></span></div>
+        <div class="footer-left">
+          <span id="footerSummary"></span>
+        </div>
         <div class="footer-right">
-          <button id="clearCompletedBtn" class="btn btn-ghost-sm" type="button">Limpiar completadas</button>
+          <button
+            id="clearCompletedBtn"
+            class="btn btn-ghost-sm"
+            type="button">
+            Limpiar completadas
+          </button>
         </div>
       </footer>
     </div>
   </div>
 
-  <!-- TEMPLATE DE TARJETA MEJORADO (Con selector de Pizarra) -->
+  <!-- TEMPLATE DE TARJETA -->
   <template id="cardTemplate">
     <article class="card">
-      <button class="card-complete-btn" type="button" aria-label="Completar">✓</button>
+      <button
+        class="card-complete-btn"
+        type="button"
+        aria-label="Completar">
+        ✓
+      </button>
       <div class="card-body">
-        <div class="card-header"><h3 class="card-title"></h3></div>
+        <div class="card-header">
+          <h3 class="card-title"></h3>
+        </div>
         <p class="card-url"></p>
         <div class="card-meta">
           <span class="pill pill-category"></span>
@@ -234,16 +397,24 @@
         </div>
       </div>
       <div class="card-footer">
-        <select class="card-move-select btn-link" aria-label="Mover a pizarra">
+        <select
+          class="card-move-select btn-link"
+          aria-label="Mover a la pizarra">
           <option value="inbox">📥 Bandeja</option>
           <option value="someday">☁️ Algún día</option>
           <option value="week">📅 Esta semana</option>
           <option value="today">🔥 Hoy</option>
         </select>
         <span class="card-footer-spacer"></span>
-        <button class="btn-link card-focus-btn" type="button">Focus</button>
-        <button class="btn-link card-open-btn" type="button">Abrir</button>
-        <button class="btn-link card-delete-btn" type="button">Borrar</button>
+        <button class="btn-link card-focus-btn" type="button">
+          Focus
+        </button>
+        <button class="btn-link card-open-btn" type="button">
+          Abrir
+        </button>
+        <button class="btn-link card-delete-btn" type="button">
+          Borrar
+        </button>
       </div>
     </article>
   </template>
