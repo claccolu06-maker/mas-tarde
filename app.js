@@ -91,12 +91,13 @@ const formatDateTime = (timestamp) => {
 function loadCards() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    cards = raw
-      ? JSON.parse(raw).map((c) => ({
-          ...c,
-          bucket: c.bucket || 'inbox',
-        }))
-      : [];
+   cards = raw
+  ? JSON.parse(raw).map((c) => ({
+      ...c,
+      bucket: c.bucket || 'inbox',
+      focusSessions: c.focusSessions || 0, // NUEVO
+    }))
+  : [];
   } catch (e) {
     console.error('Error al parsear LocalStorage:', e);
     cards = [];
@@ -281,17 +282,18 @@ function addCardFromForm(e) {
   const rawUrl = elements.urlInput.value;
   if (!rawUrl) return;
 
-  const newCard = {
-    id: generateId(),
-    url: normalizeUrl(rawUrl),
-    title: elements.titleInput.value.trim(),
-    category: elements.categorySelect.value,
-    estimatedTime: parseInt(elements.timeInput.value, 10),
-    createdAt: Date.now(),
-    completed: false,
-    completedAt: null,
-    bucket: 'inbox',
-  };
+ const newCard = {
+  id: generateId(),
+  url: normalizeUrl(rawUrl),
+  title: elements.titleInput.value.trim(),
+  category: elements.categorySelect.value,
+  estimatedTime: parseInt(elements.timeInput.value, 10),
+  createdAt: Date.now(),
+  completed: false,
+  completedAt: null,
+  bucket: 'inbox',
+  focusSessions: 0, // NUEVO
+};
 
   cards.push(newCard);
   saveCards();
@@ -427,12 +429,22 @@ function tickFocusTimer() {
   const s = (focusRemainingSeconds % 60).toString().padStart(2, '0');
   elements.focusTimerDisplay.textContent = `${m}:${s}`;
 
-  if (focusRemainingSeconds <= 0) {
-    stopFocusTimer();
-    elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
-    elements.focusResultPanel.hidden = false;
+ if (focusRemainingSeconds <= 0) {
+  stopFocusTimer();
+  elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
+  elements.focusResultPanel.hidden = false;
+
+  // NUEVO: sumar una sesión de foco a la tarea actual
+  if (focusSelectedId) {
+    const card = cards.find((c) => c.id === focusSelectedId);
+    if (card) {
+      card.focusSessions = (card.focusSessions || 0) + 1;
+      saveCards();
+      updateHistoryView(); // para que refleje datos agregados
+    }
   }
 }
+
 
 function toggleFocusTimer() {
   if (!focusSelectedId) {
@@ -548,14 +560,14 @@ function createBoardCard(card) {
       </span>
     </div>
     <div class="board-card-footer">
-      <div class="board-card-actions prev-next-actions">
-        <button class="btn-prev" type="button">←</button>
-        <button class="btn-next" type="button">→</button>
-      </div>
+      <span class="board-card-secondary">
+        Arrastra a otra columna para cambiar de estado.
+      </span>
       <button class="board-card-focus-btn" type="button">Focus</button>
     </div>
   `;
 
+  // Drag & drop
   node.addEventListener('dragstart', (e) => {
     e.dataTransfer.setData('text/plain', card.id);
     node.classList.add('dragging');
@@ -565,26 +577,7 @@ function createBoardCard(card) {
     node.classList.remove('dragging');
   });
 
-  const flow = ['someday', 'week', 'today', 'done'];
-  const currentIdx = flow.indexOf(card.bucket);
-  const safeIdx = currentIdx === -1 ? 0 : currentIdx;
-
-  const btnPrev = node.querySelector('.btn-prev');
-  const btnNext = node.querySelector('.btn-next');
   const btnFocus = node.querySelector('.board-card-focus-btn');
-
-  btnPrev.onclick = (e) => {
-    e.stopPropagation();
-    if (safeIdx <= 0) return;
-    moveCardToBucket(card.id, flow[safeIdx - 1]);
-  };
-
-  btnNext.onclick = (e) => {
-    e.stopPropagation();
-    if (safeIdx >= flow.length - 1) return;
-    moveCardToBucket(card.id, flow[safeIdx + 1]);
-  };
-
   btnFocus.onclick = (e) => {
     e.stopPropagation();
     startFocusSessionFromCard(card.id);
@@ -596,6 +589,7 @@ function createBoardCard(card) {
 
   return node;
 }
+
 
 function renderBoard() {
   const buckets = ['someday', 'week', 'today', 'done'];
