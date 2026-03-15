@@ -1,726 +1,958 @@
-const STORAGE_KEY = 'smartTimeHub.cards';
-const THEME_KEY = 'smartTimeHub.theme';
+// app.js COMPLETO
 
-let cards = [];
+// --------------------------
+// Estado y constantes
+// --------------------------
 
-// DOM Elements cache
-const elements = {
-  // Inbox Form
-  form: document.getElementById('cardForm'),
-  urlInput: document.getElementById('urlInput'),
-  titleInput: document.getElementById('titleInput'),
-  categorySelect: document.getElementById('categorySelect'),
-  timeInput: document.getElementById('timeInput'),
-  cardsGrid: document.getElementById('cardsGrid'),
-  cardTemplate: document.getElementById('cardTemplate'),
-  pendingCount: document.getElementById('pendingCount'),
-  completedCount: document.getElementById('completedCount'),
-  totalTime: document.getElementById('totalTime'),
-  footerSummary: document.getElementById('footerSummary'),
-  cardsSubtitle: document.getElementById('cardsSubtitle'),
-  searchInput: document.getElementById('searchInput'),
-  clearCompletedBtn: document.getElementById('clearCompletedBtn'),
-  themeToggle: document.getElementById('themeToggle'),
-  addCardBtn: document.getElementById('addCardBtn'),
-  emptyState: document.getElementById('emptyState'),
+const STORAGE_KEY = 'focus_board_v5';
 
-  // Focus Mode
-  focusTaskSelect: document.getElementById('focusTaskSelect'),
-  focusTaskCard: document.getElementById('focusTaskCard'),
-  focusTaskContent: document.getElementById('focusTaskContent'),
-  focusTaskTitle: document.getElementById('focusTaskTitle'),
-  focusTaskUrl: document.getElementById('focusTaskUrl'),
-  focusTaskCategory: document.getElementById('focusTaskCategory'),
-  focusTaskTime: document.getElementById('focusTaskTime'),
-  focusOpenBtn: document.getElementById('focusOpenBtn'),
-  focusTimerDisplay: document.getElementById('focusTimerDisplay'),
-  focusStartPauseBtn: document.getElementById('focusStartPauseBtn'),
-  focusResetBtn: document.getElementById('focusResetBtn'),
-  focusResultPanel: document.getElementById('focusResultPanel'),
-  focusMarkDoneBtn: document.getElementById('focusMarkDoneBtn'),
-  focusAnotherBtn: document.getElementById('focusAnotherBtn'),
-  focusNowLabel: document.getElementById('focusNowLabel'),
-  focusNowTitle: document.getElementById('focusNowTitle'),
-
-  // History & Board
-  historyTableBody: document.getElementById('historyTableBody'),
-  historySubtitle: document.getElementById('historySubtitle'),
-  historySessionsCount: document.getElementById('historySessionsCount'),
-  historyMinutesTotal: document.getElementById('historyMinutesTotal'),
-  boardSomeday: document.getElementById('boardSomeday'),
-  boardWeek: document.getElementById('boardWeek'),
-  boardToday: document.getElementById('boardToday'),
-  boardDone: document.getElementById('boardDone'),
-  boardCountSomeday: document.getElementById('boardCountSomeday'),
-  boardCountWeek: document.getElementById('boardCountWeek'),
-  boardCountToday: document.getElementById('boardCountToday'),
-  boardCountDone: document.getElementById('boardCountDone'),
+const DEFAULT_SETTINGS = {
+  focusDuration: 25,
+  shortBreak: 5,
+  longBreak: 15,
+  longBreakInterval: 4,
 };
 
-const viewElements = {
-  inbox: document.getElementById('view-inbox'),
-  focus: document.getElementById('view-focus'),
-  board: document.getElementById('view-board'),
-  history: document.getElementById('view-history'),
-};
-const navButtons = document.querySelectorAll('.nav-item[data-view]');
-
-/* ===== HELPERS ===== */
-
-const generateId = () =>
-  crypto.randomUUID
-    ? crypto.randomUUID()
-    : Date.now().toString(36) + Math.random().toString(36).slice(2);
-
-const normalizeUrl = (url) =>
-  /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
-
-const categoryLabel = (cat) =>
-  ({ video: 'Video', article: 'Artículo', course: 'Curso', project: 'Proyecto' }[cat] || 'Otro');
-
-const formatDateTime = (timestamp) => {
-  if (!timestamp) return '';
-  return new Intl.DateTimeFormat('es-ES', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(timestamp));
+const CATEGORY_LABELS = {
+  deep_work: 'Deep work',
+  admin: 'Administrativo',
+  learning: 'Aprender',
+  personal: 'Personal',
+  quick_win: 'Golpe rápido',
 };
 
-/* ===== STORAGE ===== */
+let state = {
+  tasks: [],
+  history: [],
+  focusSessions: [],
+  streak: {
+    current: 0,
+    best: 0,
+    lastDate: null,
+  },
+  settings: { ...DEFAULT_SETTINGS },
+  survivalMode: {
+    enabled: false,
+    view: 'all', // all | survival
+  },
+};
 
-function loadCards() {
+let currentFocus = {
+  taskId: null,
+  phase: 'idle', // idle | focus | short_break | long_break
+  startTime: null,
+  remainingSeconds: 0,
+  cycleCount: 0,
+  timerId: null,
+};
+
+let currentTetrisMinutes = 25;
+
+// --------------------------
+// Utilidades
+// --------------------------
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-   cards = raw
-  ? JSON.parse(raw).map((c) => ({
-      ...c,
-      bucket: c.bucket || 'inbox',
-      focusSessions: c.focusSessions || 0, // NUEVO
-    }))
-  : [];
+    const parsed = JSON.parse(raw);
+    state = {
+      ...state,
+      ...parsed,
+      settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+    };
   } catch (e) {
-    console.error('Error al parsear LocalStorage:', e);
-    cards = [];
+    console.error('Error loading state', e);
   }
 }
 
-const saveCards = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-
-/* ===== BANDEJA (INBOX) ===== */
-
-function createCard(card) {
-  const node = elements.cardTemplate.content.firstElementChild.cloneNode(true);
-
-  node.querySelector('.card-title').textContent = card.title || '(Sin título)';
-  node.querySelector('.card-url').textContent = card.url;
-
-  const catPill = node.querySelector('.pill-category');
-  catPill.textContent = categoryLabel(card.category);
-  catPill.dataset.category = card.category;
-
-  node.querySelector('.pill-time').textContent = `${card.estimatedTime} min`;
-
-  if (card.completed) node.classList.add('completed');
-  if (focusSelectedId === card.id) node.classList.add('focus-active');
-
-  const moveSelect = node.querySelector('.card-move-select');
-  if (moveSelect) {
-    moveSelect.value = card.bucket;
-    moveSelect.addEventListener('change', (e) => {
-      e.stopPropagation();
-      const value = e.target.value || 'inbox';
-      moveCardToBucket(card.id, value);
-    });
-  }
-
-  node
-    .querySelector('.card-complete-btn')
-    .addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleCompleted(card.id);
-    });
-
-  node
-    .querySelector('.card-open-btn')
-    .addEventListener('click', (e) => {
-      e.stopPropagation();
-      window.open(card.url, '_blank', 'noopener');
-    });
-
-  node
-    .querySelector('.card-delete-btn')
-    .addEventListener('click', (e) => {
-      e.stopPropagation();
-      confirmDelete(card.id);
-    });
-
-  node
-    .querySelector('.card-focus-btn')
-    .addEventListener('click', (e) => {
-      e.stopPropagation();
-      startFocusSessionFromCard(card.id);
-    });
-
-  node.addEventListener('click', () =>
-    window.open(card.url, '_blank', 'noopener'),
-  );
-
-  return node;
+function generateId() {
+  return `t_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function render() {
-  const term = elements.searchInput.value.trim().toLowerCase();
+function formatMinutes(minutes) {
+  if (!minutes || minutes < 60) return `${minutes || 0} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+}
 
-  const filtered = cards.filter(
-    (c) =>
-      c.bucket === 'inbox' &&
-      (!term ||
-        c.title?.toLowerCase().includes(term) ||
-        c.category.toLowerCase().includes(term)),
+function isSameDay(ts1, ts2) {
+  const d1 = new Date(ts1);
+  const d2 = new Date(ts2);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
   );
+}
 
-  elements.cardsGrid.innerHTML = '';
-  filtered
-    .slice()
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .forEach((c) => elements.cardsGrid.appendChild(createCard(c)));
+function categoryLabel(cat) {
+  return CATEGORY_LABELS[cat] || 'Sin categoría';
+}
 
-  updateEmptyState(filtered);
-  updateSummary();
-  updateFocusTaskOptions();
-  updateHistoryView();
+// --------------------------
+// Referencias DOM
+// --------------------------
+
+const elements = {
+  // Columnas
+  inboxColumn: document.getElementById('inboxColumn'),
+  todayColumn: document.getElementById('todayColumn'),
+  weekColumn: document.getElementById('weekColumn'),
+  doneColumn: document.getElementById('doneColumn'),
+
+  // Formularios
+  addTaskForm: document.getElementById('addTaskForm'),
+  taskTitleInput: document.getElementById('taskTitle'),
+  taskUrlInput: document.getElementById('taskUrl'),
+  taskCategorySelect: document.getElementById('taskCategory'),
+  taskEstimateInput: document.getElementById('taskEstimate'),
+  taskDueDateInput: document.getElementById('taskDueDate'),
+
+  // Focus
+  focusOverlay: document.getElementById('focusOverlay'),
+  focusTaskTitle: document.getElementById('focusTaskTitle'),
+  focusCategoryLabel: document.getElementById('focusCategoryLabel'),
+  focusColumnLabel: document.getElementById('focusColumnLabel'),
+  focusTimerLabel: document.getElementById('focusTimerLabel'),
+  focusPhaseLabel: document.getElementById('focusPhaseLabel'),
+  focusPrimaryBtn: document.getElementById('focusPrimaryBtn'),
+  focusSecondaryBtn: document.getElementById('focusSecondaryBtn'),
+  focusCloseBtn: document.getElementById('focusCloseBtn'),
+  focusProgressBar: document.getElementById('focusProgressBar'),
+
+  // Ajustes focus
+  focusSettingsForm: document.getElementById('focusSettingsForm'),
+  focusDurationInput: document.getElementById('focusDuration'),
+  shortBreakInput: document.getElementById('shortBreak'),
+  longBreakInput: document.getElementById('longBreak'),
+  longBreakIntervalInput: document.getElementById('longBreakInterval'),
+
+  // Racha
+  streakCurrentLabel: document.getElementById('streakCurrent'),
+  streakBestLabel: document.getElementById('streakBest'),
+
+  // Historial
+  historyList: document.getElementById('historyList'),
+  historyEmpty: document.getElementById('historyEmpty'),
+
+  // Tetris del tiempo
+  timeTetrisBtn: document.getElementById('timeTetrisBtn'),
+  timeTetrisMenu: document.getElementById('timeTetrisMenu'),
+  tetrisOverlay: document.getElementById('tetrisOverlay'),
+  tetrisTitle: document.getElementById('tetrisTitle'),
+  tetrisDescription: document.getElementById('tetrisDescription'),
+  tetrisList: document.getElementById('tetrisList'),
+  tetrisEmptyMessage: document.getElementById('tetrisEmptyMessage'),
+  tetrisStartBtn: document.getElementById('tetrisStartBtn'),
+  tetrisCloseBtn: document.getElementById('tetrisCloseBtn'),
+
+  // Modo Supervivencia
+  survivalToggle: document.getElementById('survivalToggle'),
+  survivalSummary: document.getElementById('survivalSummary'),
+  survivalFilters: document.getElementById('survivalFilters'),
+  survivalChips: document.getElementById('survivalChips'),
+};
+
+// --------------------------
+// Render de tareas
+// --------------------------
+
+function renderBoard() {
+  const columns = {
+    inbox: elements.inboxColumn.querySelector('.task-list'),
+    today: elements.todayColumn.querySelector('.task-list'),
+    week: elements.weekColumn.querySelector('.task-list'),
+    done: elements.doneColumn.querySelector('.task-list'),
+  };
+
+  Object.values(columns).forEach((col) => (col.innerHTML = ''));
+
+  const now = Date.now();
+
+  state.tasks.forEach((task) => {
+    if (state.survivalMode.enabled && state.survivalMode.view === 'survival') {
+      // Lógica de filtrado en modo supervivencia: solo urgentes y que aportan
+      const isUrgent =
+        task.dueDate &&
+        new Date(task.dueDate).getTime() - now < 1000 * 60 * 60 * 24 * 2;
+      const isValuable = task.category === 'deep_work' || task.category === 'learning';
+      if (!isUrgent && !isValuable && task.bucket !== 'done') {
+        return;
+      }
+    }
+
+    const col = columns[task.bucket];
+    if (!col) return;
+
+    const li = document.createElement('li');
+    li.className = 'task';
+    li.draggable = true;
+    li.dataset.id = task.id;
+
+    const metaBits = [];
+    if (task.category) metaBits.push(categoryLabel(task.category));
+    if (task.estimate) metaBits.push(formatMinutes(task.estimate));
+    if (task.dueDate) {
+      const due = new Date(task.dueDate);
+      const diff = due.getTime() - now;
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      if (days < 0) {
+        metaBits.push('Vencida');
+      } else if (days === 0) {
+        metaBits.push('Caduca hoy');
+      } else if (days === 1) {
+        metaBits.push('Caduca mañana');
+      } else {
+        metaBits.push(`En ${days} días`);
+      }
+    }
+
+    li.innerHTML = `
+      <div class="task-header">
+        <span class="task-title">${task.title || 'Sin título'}</span>
+        ${
+          task.url
+            ? `<a href="${task.url}" class="task-link" target="_blank" rel="noopener noreferrer">Abrir</a>`
+            : ''
+        }
+      </div>
+      <div class="task-meta">${metaBits.join(' · ') || 'Sin meta'}</div>
+      <div class="task-footer">
+        <button class="btn btn-xs btn-focus" type="button">Enfocarme</button>
+        <button class="btn btn-xs btn-done" type="button">${
+          task.bucket === 'done' ? 'Reabrir' : 'Marcar lista'
+        }</button>
+      </div>
+    `;
+
+    col.appendChild(li);
+  });
+
+  attachTaskEvents();
+  updateSurvivalSummary();
+}
+
+function attachTaskEvents() {
+  const tasksEls = document.querySelectorAll('.task');
+
+  tasksEls.forEach((el) => {
+    const id = el.dataset.id;
+    const focusBtn = el.querySelector('.btn-focus');
+    const doneBtn = el.querySelector('.btn-done');
+
+    focusBtn.addEventListener('click', () => startFocusFromTask(id));
+    doneBtn.addEventListener('click', () => toggleTaskDone(id));
+
+    el.addEventListener('dragstart', handleDragStart);
+    el.addEventListener('dragend', handleDragEnd);
+  });
+
+  const columns = document.querySelectorAll('.task-column .task-list');
+  columns.forEach((col) => {
+    col.addEventListener('dragover', handleDragOver);
+    col.addEventListener('drop', handleDrop);
+    col.addEventListener('dragleave', handleDragLeave);
+  });
+}
+
+// --------------------------
+// Drag & Drop
+// --------------------------
+
+let draggedTaskId = null;
+
+function handleDragStart(e) {
+  const el = e.currentTarget;
+  draggedTaskId = el.dataset.id;
+  el.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggedTaskId);
+}
+
+function handleDragEnd(e) {
+  const el = e.currentTarget;
+  el.classList.remove('dragging');
+  draggedTaskId = null;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const col = e.currentTarget;
+  col.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  const col = e.currentTarget;
+  if (!col.contains(e.relatedTarget)) {
+    col.classList.remove('drag-over');
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const col = e.currentTarget;
+  col.classList.remove('drag-over');
+
+  const id = e.dataTransfer.getData('text/plain') || draggedTaskId;
+  if (!id) return;
+
+  const columnElement = col.closest('.task-column');
+  const bucket = columnElement.dataset.bucket;
+
+  const task = state.tasks.find((t) => t.id === id);
+  if (!task) return;
+
+  task.bucket = bucket;
+
+  if (bucket === 'done' && !task.completedAt) {
+    task.completedAt = Date.now();
+    addHistoryEntry({
+      type: 'completed',
+      taskId: task.id,
+      title: task.title,
+      timestamp: Date.now(),
+      bucket,
+    });
+  } else if (bucket !== 'done') {
+    task.completedAt = null;
+  }
+
+  saveState();
   renderBoard();
 }
 
-function updateEmptyState(filteredCards) {
-  const inboxCount = cards.filter((c) => c.bucket === 'inbox').length;
-  const inboxEmpty = inboxCount === 0;
+// --------------------------
+// Historial
+// --------------------------
 
-  elements.emptyState.style.display = inboxEmpty ? 'block' : 'none';
-
-  if (inboxEmpty) {
-    elements.cardsSubtitle.textContent =
-      'Tu bandeja está vacía. Guarda algo que quieras hacer cuando tengas tiempo.';
-  } else if (filteredCards.length === 0) {
-    elements.cardsSubtitle.textContent =
-      'No hay resultados con ese filtro en tu bandeja.';
-  } else {
-    elements.cardsSubtitle.textContent =
-      `Tienes ${filteredCards.length} elemento(s) en tu bandeja. Cuando tengas un momento, pásalos a la Pizarra para planificar.`;
-  }
+function addHistoryEntry(entry) {
+  state.history.unshift({ id: generateId(), ...entry });
+  state.history = state.history.slice(0, 200);
+  saveState();
+  renderHistory();
 }
 
-function computeFocusStreakDays(completedCards) {
-  if (!completedCards.length) return 0;
+function renderHistory() {
+  const list = elements.historyList;
+  const empty = elements.historyEmpty;
 
-  const daysSet = new Set(
-    completedCards.map((c) => {
-      const d = new Date(c.completedAt);
-      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-    }),
-  );
-
-  const days = Array.from(daysSet)
-    .map((key) => {
-      const [y, m, d] = key.split('-').map(Number);
-      const date = new Date(y, m - 1, d);
-      date.setHours(0, 0, 0, 0);
-      return date.getTime();
-    })
-    .sort((a, b) => a - b);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  let streak = 0;
-  let currentDayTs = today.getTime();
-
-  while (days.includes(currentDayTs)) {
-    streak += 1;
-    currentDayTs -= 24 * 60 * 60 * 1000;
-  }
-
-  return streak;
-}
-
-function updateSummary() {
-  const pending = cards.filter((c) => !c.completed);
-  const completed = cards.filter((c) => c.completed);
-  const totalTime = pending.reduce((sum, c) => sum + (c.estimatedTime || 0), 0);
-  const todayCount = cards.filter((c) => c.bucket === 'today' && !c.completed)
-    .length;
-
-  elements.pendingCount.textContent = pending.length;
-  elements.completedCount.textContent = completed.length;
-  elements.totalTime.textContent = `${totalTime} min`;
-
-  if (!elements.footerSummary) return;
-
-  const streakDays = computeFocusStreakDays(completed);
-
-  if (cards.length === 0) {
-    elements.footerSummary.textContent =
-      'Aún no has añadido tareas. Empieza con algo pequeño de 10 minutos.';
-  } else if (pending.length === 0) {
-    elements.footerSummary.textContent =
-      '¡Nice! Has usado bien tu tiempo. Por ahora no tienes tareas pendientes.';
-  } else if (todayCount === 0) {
-    elements.footerSummary.textContent =
-      'Tienes tareas pendientes. Pasa 1–3 a “Hoy” en la Pizarra y haz una sesión de Focus.';
-  } else {
-    const streakText =
-      streakDays > 0 ? ` Llevas una racha de ${streakDays} día(s) con foco.` : '';
-    elements.footerSummary.textContent =
-      `Tienes ${pending.length} tarea(s) pendiente(s), de las cuales ${todayCount} están en Hoy.` +
-      streakText;
-  }
-}
-
-/* ===== ACCIONES DE TARJETA ===== */
-
-function addCardFromForm(e) {
-  e.preventDefault();
-  const rawUrl = elements.urlInput.value;
-  if (!rawUrl) return;
-
- const newCard = {
-  id: generateId(),
-  url: normalizeUrl(rawUrl),
-  title: elements.titleInput.value.trim(),
-  category: elements.categorySelect.value,
-  estimatedTime: parseInt(elements.timeInput.value, 10),
-  createdAt: Date.now(),
-  completed: false,
-  completedAt: null,
-  bucket: 'inbox',
-  focusSessions: 0, // NUEVO
-};
-
-  cards.push(newCard);
-  saveCards();
-  render();
-  elements.form.reset();
-}
-
-function toggleCompleted(id) {
-  const card = cards.find((c) => c.id === id);
-  if (!card) return;
-
-  card.completed = !card.completed;
-  card.completedAt = card.completed ? Date.now() : null;
-  card.bucket = card.completed ? 'done' : card.bucket === 'done' ? 'inbox' : card.bucket;
-
-  saveCards();
-  render();
-}
-
-function confirmDelete(id) {
-  if (!confirm('¿Borrar esta tarjeta?')) return;
-  cards = cards.filter((c) => c.id !== id);
-  saveCards();
-  render();
-}
-
-function clearCompleted() {
-  if (!confirm('Se borrarán todas las completadas. ¿Continuar?')) return;
-  cards = cards.filter((c) => !c.completed);
-  saveCards();
-  render();
-}
-
-/* ===== TEMA Y NAVEGACIÓN ===== */
-
-function toggleTheme() {
-  const root = document.documentElement;
-  const isDark = root.classList.contains('theme-dark');
-  root.classList.toggle('theme-dark', !isDark);
-  root.classList.toggle('theme-light', isDark);
-  localStorage.setItem(THEME_KEY, !isDark ? 'dark' : 'light');
-}
-
-function initTheme() {
-  const root = document.documentElement;
-  const saved =
-    localStorage.getItem(THEME_KEY) ||
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  root.classList.toggle('theme-dark', saved === 'dark');
-  root.classList.toggle('theme-light', saved === 'light');
-}
-
-function switchView(target) {
-  Object.values(viewElements).forEach((s) => s && s.classList.remove('view-active'));
-  navButtons.forEach((btn) => btn.classList.remove('nav-item-active'));
-
-  const section = viewElements[target];
-  if (section) section.classList.add('view-active');
-
-  document
-    .querySelector(`.nav-item[data-view="${target}"]`)
-    ?.classList.add('nav-item-active');
-}
-
-/* ===== MODO FOCUS ===== */
-
-const FOCUS_DURATION_SECONDS = 30 * 60;
-let focusSelectedId = null;
-let focusRemainingSeconds = FOCUS_DURATION_SECONDS;
-let focusIntervalId = null;
-let focusEndTime = null;
-let focusRunning = false;
-
-function updateFocusTaskOptions() {
-  const pending = cards.filter((c) => !c.completed);
-  elements.focusTaskSelect.innerHTML =
-    '<option value="">Selecciona una tarea pendiente…</option>';
-  pending.forEach((c) =>
-    elements.focusTaskSelect.appendChild(
-      new Option(c.title || c.url, c.id),
-    ),
-  );
-
-  if (pending.some((c) => c.id === focusSelectedId)) {
-    elements.focusTaskSelect.value = focusSelectedId;
-  } else {
-    focusSelectedId = null;
-    clearFocusTaskDetails();
-    resetFocusTimer();
-  }
-}
-
-function handleFocusTaskChange() {
-  focusSelectedId = elements.focusTaskSelect.value || null;
-  const card = cards.find((c) => c.id === focusSelectedId && !c.completed);
-  if (!card) {
-    clearFocusTaskDetails();
+  if (!state.history.length) {
+    list.innerHTML = '';
+    empty.hidden = false;
     return;
   }
 
-  elements.focusTaskContent.hidden = false;
-  elements.focusTaskCard.querySelector('.focus-empty').style.display = 'none';
-  elements.focusTaskTitle.textContent = card.title || '(Sin título)';
-  elements.focusTaskUrl.textContent = card.url;
-  elements.focusTaskCategory.textContent = categoryLabel(card.category);
-  elements.focusTaskTime.textContent = `${card.estimatedTime} min`;
-  elements.focusOpenBtn.onclick = () => window.open(card.url, '_blank', 'noopener');
+  empty.hidden = true;
+  list.innerHTML = '';
 
-  elements.focusNowTitle.textContent = card.title || card.url;
-  elements.focusNowLabel.hidden = false;
+  state.history.forEach((entry) => {
+    const li = document.createElement('li');
+    li.className = 'history-item';
 
-  resetFocusTimer();
-  render();
+    const date = new Date(entry.timestamp);
+    const timeLabel = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    let label = '';
+    if (entry.type === 'focus_completed') {
+      label = `Sesión completada: ${entry.title || 'Tarea sin título'}`;
+    } else if (entry.type === 'completed') {
+      label = `Tarea completada: ${entry.title || 'Tarea sin título'}`;
+    } else if (entry.type === 'focus_cancelled') {
+      label = `Sesión cancelada: ${entry.title || 'Tarea sin título'}`;
+    }
+
+    li.innerHTML = `
+      <div class="history-main">${label}</div>
+      <div class="history-meta">${timeLabel}</div>
+    `;
+
+    list.appendChild(li);
+  });
 }
 
-function clearFocusTaskDetails() {
-  elements.focusTaskContent.hidden = true;
-  elements.focusTaskCard.querySelector('.focus-empty').style.display = 'block';
-  elements.focusNowLabel.hidden = true;
-  elements.focusNowTitle.textContent = '';
-  resetFocusTimer();
-}
+// --------------------------
+// Racha
+// --------------------------
 
-function tickFocusTimer() {
-  if (!focusRunning || !focusEndTime) return;
+function updateStreakOnCompleted() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.streak.lastDate === today) return;
 
-  const now = Date.now();
-  focusRemainingSeconds = Math.max(0, Math.ceil((focusEndTime - now) / 1000));
-
-  const m = Math.floor(focusRemainingSeconds / 60)
-    .toString()
-    .padStart(2, '0');
-  const s = (focusRemainingSeconds % 60).toString().padStart(2, '0');
-  elements.focusTimerDisplay.textContent = `${m}:${s}`;
-
-  if (focusRemainingSeconds <= 0) {
-    stopFocusTimer();
-    elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
-    elements.focusResultPanel.hidden = false;
-
-    // NUEVO: sumar una sesión de foco a la tarea actual
-    if (focusSelectedId) {
-      const card = cards.find((c) => c.id === focusSelectedId);
-      if (card) {
-        card.focusSessions = (card.focusSessions || 0) + 1;
-        saveCards();
-        updateHistoryView(); // para que refleje datos agregados
-      }
+  if (!state.streak.lastDate) {
+    state.streak.current = 1;
+  } else {
+    const last = new Date(state.streak.lastDate);
+    const diffDays = Math.round(
+      (new Date(today) - last) / (1000 * 60 * 60 * 24),
+    );
+    if (diffDays === 1) {
+      state.streak.current += 1;
+    } else if (diffDays > 1) {
+      state.streak.current = 1;
     }
   }
-}  // ← ESTA llave te falta
 
-function toggleFocusTimer() {
-  if (!focusSelectedId) {
-    alert('Elige una tarea para esta sesión.');
-    return;
+  state.streak.lastDate = today;
+  if (state.streak.current > state.streak.best) {
+    state.streak.best = state.streak.current;
   }
-  if (focusRunning) {
-    stopFocusTimer();
-  } else {
-    startFocusTimer();
-  }
+
+  saveState();
+  renderStreak();
+}
+
+function renderStreak() {
+  elements.streakCurrentLabel.textContent = state.streak.current;
+  elements.streakBestLabel.textContent = state.streak.best;
+}
+
+// --------------------------
+// Focus / Pomodoro
+// --------------------------
+
+function startFocusFromTask(taskId) {
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+
+  const duration = state.settings.focusDuration * 60;
+
+  currentFocus = {
+    taskId: task.id,
+    phase: 'focus',
+    startTime: Date.now(),
+    remainingSeconds: duration,
+    cycleCount: currentFocus.cycleCount || 0,
+    timerId: null,
+  };
+
+  openFocusOverlay(task);
+  startFocusTimer();
+}
+
+function openFocusOverlay(task) {
+  elements.focusTaskTitle.textContent = task.title || 'Tarea sin título';
+  elements.focusCategoryLabel.textContent = categoryLabel(task.category);
+  elements.focusColumnLabel.textContent =
+    task.bucket === 'today'
+      ? 'Columna Hoy'
+      : task.bucket === 'week'
+      ? 'Esta semana'
+      : task.bucket === 'inbox'
+      ? 'Bandeja'
+      : 'Hechas';
+
+  updateFocusUI();
+  elements.focusOverlay.classList.add('open');
+}
+
+function closeFocusOverlay() {
+  elements.focusOverlay.classList.remove('open');
+  stopFocusTimer();
+  currentFocus = {
+    taskId: null,
+    phase: 'idle',
+    startTime: null,
+    remainingSeconds: 0,
+    cycleCount: 0,
+    timerId: null,
+  };
 }
 
 function startFocusTimer() {
-  focusRunning = true;
-  focusEndTime = Date.now() + focusRemainingSeconds * 1000;
-  focusIntervalId = setInterval(tickFocusTimer, 500);
-  elements.focusStartPauseBtn.textContent = 'Pausar';
-  elements.focusResultPanel.hidden = true;
-  elements.focusTimerDisplay.classList.add('focus-running');
+  stopFocusTimer();
+
+  const totalSeconds = getPhaseTotalSeconds();
+  if (!totalSeconds) return;
+
+  if (!currentFocus.startTime) {
+    currentFocus.startTime = Date.now();
+  }
+
+  currentFocus.timerId = setInterval(() => {
+    const elapsed = Math.floor(
+      (Date.now() - currentFocus.startTime) / 1000,
+    );
+    currentFocus.remainingSeconds = Math.max(
+      totalSeconds - elapsed,
+      0,
+    );
+
+    updateFocusTimerLabel(totalSeconds);
+
+    if (currentFocus.remainingSeconds <= 0) {
+      handlePhaseComplete();
+    }
+  }, 1000);
+
+  updateFocusTimerLabel(totalSeconds);
 }
 
 function stopFocusTimer() {
-  focusRunning = false;
-  if (focusIntervalId) clearInterval(focusIntervalId);
-  focusIntervalId = null;
-  elements.focusStartPauseBtn.textContent = 'Reanudar';
-  elements.focusTimerDisplay.classList.remove('focus-running');
+  if (currentFocus.timerId) {
+    clearInterval(currentFocus.timerId);
+    currentFocus.timerId = null;
+  }
 }
 
-function resetFocusTimer() {
+function getPhaseTotalSeconds() {
+  if (currentFocus.phase === 'focus') {
+    return state.settings.focusDuration * 60;
+  }
+  if (currentFocus.phase === 'short_break') {
+    return state.settings.shortBreak * 60;
+  }
+  if (currentFocus.phase === 'long_break') {
+    return state.settings.longBreak * 60;
+  }
+  return 0;
+}
+
+function updateFocusTimerLabel(totalSeconds) {
+  const remaining = currentFocus.remainingSeconds;
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
+  elements.focusTimerLabel.textContent = `${minutes
+    .toString()
+    .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  const progress =
+    totalSeconds > 0 ? ((totalSeconds - remaining) / totalSeconds) * 100 : 0;
+  elements.focusProgressBar.style.width = `${progress}%`;
+}
+
+function handlePhaseComplete() {
   stopFocusTimer();
-  focusRemainingSeconds = FOCUS_DURATION_SECONDS;
-  elements.focusTimerDisplay.textContent = '30:00';
-  elements.focusStartPauseBtn.textContent = 'Iniciar sesión';
-  elements.focusResultPanel.hidden = true;
-}
 
-function handleFocusMarkDone() {
-  if (!focusSelectedId) return;
-  toggleCompleted(focusSelectedId);
-  focusSelectedId = null;
-  clearFocusTaskDetails();
-}
+  if (!currentFocus.taskId) return;
+  const task = state.tasks.find((t) => t.id === currentFocus.taskId);
+  if (!task) return;
 
-function startFocusSessionFromCard(id) {
-  const card = cards.find((c) => c.id === id && !c.completed);
-  if (!card) return;
+  if (currentFocus.phase === 'focus') {
+    // Marcar tarea como hecha al terminar un bloque de foco
+    task.bucket = 'done';
+    task.completedAt = Date.now();
 
-  if (card.bucket !== 'today' && card.bucket !== 'done') {
-    const todayCount = cards.filter(
-      (c) => c.bucket === 'today' && !c.completed,
-    ).length;
-    if (todayCount < 3) {
-      card.bucket = 'today';
-      saveCards();
-    } else {
-      alert(
-        'Ya tienes 3 tareas en Hoy. Termina alguna antes de añadir otra.',
-      );
-    }
-  }
-
-  focusSelectedId = id;
-  switchView('focus');
-  elements.focusTaskSelect.value = id;
-  handleFocusTaskChange();
-}
-
-/* ===== PIZARRA ===== */
-
-function moveCardToBucket(id, bucket) {
-  const card = cards.find((c) => c.id === id);
-  if (!card) return;
-
-  const flow = ['someday', 'week', 'today', 'done'];
-
-  if (bucket === 'today') {
-    const todayCount = cards.filter(
-      (c) => c.bucket === 'today' && !c.completed,
-    ).length;
-    if (todayCount >= 3 && !card.completed) {
-      alert(
-        'Límite de 3 tareas en Hoy. Termina alguna antes de añadir otra.',
-      );
-      return;
-    }
-  }
-
-  if (!flow.includes(bucket)) {
-    bucket = 'someday';
-  }
-
-  card.bucket = bucket;
-  saveCards();
-  render();
-}
-
-function createBoardCard(card) {
-  const node = document.createElement('article');
-  node.className = `board-card ${card.completed ? 'board-card-done' : ''}`;
-  node.draggable = true;
-  node.dataset.cardId = card.id;
-
-  node.innerHTML = `
-    <div class="board-card-header">
-      <h4 class="board-card-title">${card.title || card.url}</h4>
-      <span class="pill pill-time">${card.estimatedTime}m</span>
-    </div>
-    <div class="board-card-meta">
-      <span class="pill pill-category" data-category="${card.category}">
-        ${categoryLabel(card.category)}
-      </span>
-    </div>
-    <div class="board-card-footer">
-      <span class="board-card-secondary">
-        Arrastra a otra columna para cambiar de estado.
-      </span>
-      <button class="board-card-focus-btn" type="button">Focus</button>
-    </div>
-  `;
-
-  // Drag & drop
-  node.addEventListener('dragstart', (e) => {
-    e.dataTransfer.setData('text/plain', card.id);
-    node.classList.add('dragging');
-  });
-
-  node.addEventListener('dragend', () => {
-    node.classList.remove('dragging');
-  });
-
-  const btnFocus = node.querySelector('.board-card-focus-btn');
-  btnFocus.onclick = (e) => {
-    e.stopPropagation();
-    startFocusSessionFromCard(card.id);
-  };
-
-  node.onclick = () => {
-    if (card.url) window.open(card.url, '_blank', 'noopener');
-  };
-
-  return node;
-}
-
-
-function renderBoard() {
-  const buckets = ['someday', 'week', 'today', 'done'];
-
-  buckets.forEach((bucket) => {
-    const bodyEl =
-      elements[
-        `board${bucket.charAt(0).toUpperCase() + bucket.slice(1)}`
-      ];
-    const countEl =
-      elements[
-        `boardCount${bucket.charAt(0).toUpperCase() + bucket.slice(1)}`
-      ];
-    if (!bodyEl) return;
-
-    bodyEl.innerHTML = '';
-    const bucketCards = cards.filter((c) => c.bucket === bucket);
-    bucketCards.forEach((c) => bodyEl.appendChild(createBoardCard(c)));
-    if (countEl) countEl.textContent = bucketCards.length;
-
-    if (bucketCards.length === 0) {
-      const hintText = bodyEl.dataset.emptyText;
-      if (hintText) {
-        const p = document.createElement('p');
-        p.className = 'board-column-empty-hint';
-        p.textContent = hintText;
-        bodyEl.appendChild(p);
-      }
-    }
-  });
-}
-
-function initBoardDragAndDrop() {
-  const columnBodies = document.querySelectorAll('.board-column-body');
-
-  columnBodies.forEach((col) => {
-    col.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      col.classList.add('drag-over');
+    addHistoryEntry({
+      type: 'focus_completed',
+      taskId: task.id,
+      title: task.title,
+      timestamp: Date.now(),
     });
 
-    col.addEventListener('dragleave', () => {
-      col.classList.remove('drag-over');
-    });
+    updateStreakOnCompleted();
+    saveState();
+    renderBoard();
 
-    col.addEventListener('drop', (e) => {
-      e.preventDefault();
-      col.classList.remove('drag-over');
+    // Decidir descanso
+    currentFocus.cycleCount += 1;
+    const needsLongBreak =
+      currentFocus.cycleCount % state.settings.longBreakInterval === 0;
 
-      const cardId = e.dataTransfer.getData('text/plain');
-      const targetBucket = col.dataset.bucket;
+    currentFocus.phase = needsLongBreak ? 'long_break' : 'short_break';
+    currentFocus.startTime = null;
+    currentFocus.remainingSeconds = getPhaseTotalSeconds();
 
-      if (!cardId || !targetBucket) return;
+    updateFocusUI();
+  } else {
+    // Fin de descanso -> próximo foco
+    currentFocus.phase = 'focus';
+    currentFocus.startTime = null;
+    currentFocus.remainingSeconds = getPhaseTotalSeconds();
+    updateFocusUI();
+  }
 
-      moveCardToBucket(cardId, targetBucket);
-    });
-  });
+  startFocusTimer();
 }
 
-/* ===== HISTORIAL ===== */
+function updateFocusUI() {
+  if (currentFocus.phase === 'focus') {
+    elements.focusPhaseLabel.textContent = 'Bloque de foco';
+    elements.focusPrimaryBtn.textContent = 'Pausar';
+    elements.focusSecondaryBtn.textContent = 'Cancelar sesión';
+  } else if (currentFocus.phase === 'short_break') {
+    elements.focusPhaseLabel.textContent = 'Descanso corto';
+    elements.focusPrimaryBtn.textContent = 'Pausar';
+    elements.focusSecondaryBtn.textContent = 'Saltar descanso';
+  } else if (currentFocus.phase === 'long_break') {
+    elements.focusPhaseLabel.textContent = 'Descanso largo';
+    elements.focusPrimaryBtn.textContent = 'Pausar';
+    elements.focusSecondaryBtn.textContent = 'Saltar descanso';
+  } else {
+    elements.focusPhaseLabel.textContent = 'Sin sesión activa';
+    elements.focusPrimaryBtn.textContent = 'Iniciar';
+    elements.focusSecondaryBtn.textContent = 'Cerrar';
+  }
 
-function updateHistoryView() {
-  const completed = cards
-    .filter((c) => c.completed)
-    .sort((a, b) => b.completedAt - a.completedAt);
+  const total = getPhaseTotalSeconds();
+  if (!currentFocus.remainingSeconds && total) {
+    currentFocus.remainingSeconds = total;
+  }
+  updateFocusTimerLabel(total || 0);
+}
 
-  elements.historyTableBody.innerHTML = completed
-    .map(
-      (c) => `
-    <tr>
-      <td>${c.title || c.url}</td>
-      <td>${categoryLabel(c.category)}</td>
-      <td>${formatDateTime(c.completedAt)}</td>
-      <td>${c.estimatedTime} min</td>
-    </tr>
-  `,
-    )
-    .join('');
+// --------------------------
+// Tetris del tiempo
+// --------------------------
 
-  elements.historySubtitle.textContent = completed.length
-    ? `Has completado ${completed.length} tarea(s) en total.`
-    : 'Aún no has completado ninguna tarea.';
+function openTimeTetris(minutes) {
+  currentTetrisMinutes = minutes;
 
-  const totalMinutes = completed.reduce(
-    (sum, c) => sum + (c.estimatedTime || 0),
-    0,
+  elements.tetrisTitle.textContent = `Tengo ${minutes} min`;
+  elements.tetrisDescription.textContent =
+    minutes === 15
+      ? 'Te preparo una mini playlist para un sprint de 15 minutos.'
+      : minutes === 25
+      ? 'Te propongo una playlist para un pomodoro clásico de 25 minutos.'
+      : 'Te armo una playlist para un bloque de 45 minutos sin distracciones.';
+
+  const candidates = state.tasks.filter(
+    (t) =>
+      t.bucket === 'today' ||
+      t.bucket === 'week' ||
+      t.bucket === 'inbox',
   );
-  elements.historyMinutesTotal.textContent = `${totalMinutes} min`;
 
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const sessionsThisWeek = completed.filter(
-    (c) => c.completedAt && c.completedAt > weekAgo,
-  ).length;
-  elements.historySessionsCount.textContent = sessionsThisWeek;
+  // Estrategia simple: tareas cuya estimate <= minutos
+  const fitting = candidates
+    .filter((t) => t.estimate && t.estimate <= minutes)
+    .sort((a, b) => {
+      // Priorizar urgente y deep work
+      const score = (task) => {
+        let s = 0;
+        if (task.category === 'deep_work') s += 3;
+        if (task.category === 'learning') s += 2;
+        if (task.dueDate) {
+          const diff =
+            new Date(task.dueDate).getTime() - Date.now();
+          const days = diff / (1000 * 60 * 60 * 24);
+          if (days <= 0) s += 3;
+          else if (days <= 1) s += 2;
+          else if (days <= 2) s += 1;
+        }
+        return -s;
+      };
+      return score(a) - score(b);
+    });
 
-  const streakDays = computeFocusStreakDays(completed);
-  const streakEl = document.getElementById('historyStreakDays');
-  if (streakEl) {
-    streakEl.textContent = streakDays === 1 ? '1 día' : `${streakDays} días`;
+  elements.tetrisList.innerHTML = '';
+
+  if (!fitting.length) {
+    elements.tetrisEmptyMessage.hidden = false;
+  } else {
+    elements.tetrisEmptyMessage.hidden = true;
+    fitting.forEach((task) => {
+      const li = document.createElement('li');
+      li.className = 'tetris-task';
+      li.dataset.id = task.id;
+      li.innerHTML = `
+        <div class="tetris-task-title">${task.title || task.url}</div>
+        <div class="tetris-task-meta">
+          ${categoryLabel(task.category)} · ${task.estimate || '?'} min · ${
+        task.bucket === 'today'
+          ? 'Columna Hoy'
+          : task.bucket === 'week'
+          ? 'Esta semana'
+          : 'Bandeja'
+      }
+        </div>
+      `;
+      elements.tetrisList.appendChild(li);
+    });
+  }
+
+  elements.tetrisOverlay.classList.add('open');
+}
+
+function closeTimeTetris() {
+  elements.tetrisOverlay.classList.remove('open');
+}
+
+// --------------------------
+// Modo Supervivencia
+// --------------------------
+
+function toggleSurvivalMode(enabled) {
+  state.survivalMode.enabled = enabled;
+  state.survivalMode.view = enabled ? 'survival' : 'all';
+  saveState();
+  renderBoard();
+  updateSurvivalSummary();
+  updateSurvivalUI();
+}
+
+function updateSurvivalUI() {
+  if (state.survivalMode.enabled) {
+    elements.survivalToggle.classList.add('active');
+    elements.survivalFilters.hidden = false;
+  } else {
+    elements.survivalToggle.classList.remove('active');
+    elements.survivalFilters.hidden = true;
   }
 }
 
-/* ===== INIT ===== */
+function updateSurvivalSummary() {
+  const now = Date.now();
+  const tasksToday = state.tasks.filter(
+    (t) =>
+      t.bucket !== 'done' &&
+      t.dueDate &&
+      isSameDay(new Date(t.dueDate), now),
+  );
+  const tasksThisWeek = state.tasks.filter((t) => {
+    if (!t.dueDate || t.bucket === 'done') return false;
+    const due = new Date(t.dueDate);
+    const day = due.getDay();
+    const diffToMonday = (day + 6) % 7;
+    const monday = new Date(due);
+    monday.setDate(due.getDate() - diffToMonday);
+    const today = new Date(now);
+    const todayDay = today.getDay();
+    const todayDiffToMonday = (todayDay + 6) % 7;
+    const todayMonday = new Date(today);
+    todayMonday.setDate(today.getDate() - todayDiffToMonday);
+    return isSameDay(monday, todayMonday);
+  });
+
+  const critical = tasksToday.filter(
+    (t) =>
+      t.category === 'deep_work' ||
+      t.category === 'learning' ||
+      t.category === 'quick_win',
+  );
+
+  elements.survivalSummary.textContent = `
+Tienes ${tasksToday.length} tareas que caducan hoy y ${
+    tasksThisWeek.length
+  } esta semana. De ellas, ${
+    critical.length
+  } parecen realmente importantes para tu yo de dentro de 3 meses.
+`.trim();
+}
+
+// --------------------------
+// Formularios y settings
+// --------------------------
+
+function handleAddTask(e) {
+  e.preventDefault();
+  const title = elements.taskTitleInput.value.trim();
+  const url = elements.taskUrlInput.value.trim();
+  const category = elements.taskCategorySelect.value || null;
+  const estimate = parseInt(elements.taskEstimateInput.value, 10) || null;
+  const dueDate = elements.taskDueDateInput.value || null;
+
+  if (!title && !url) return;
+
+  const task = {
+    id: generateId(),
+    title,
+    url: url || null,
+    category,
+    estimate,
+    dueDate,
+    bucket: 'inbox',
+    createdAt: Date.now(),
+    completedAt: null,
+  };
+
+  state.tasks.push(task);
+  saveState();
+  renderBoard();
+
+  elements.addTaskForm.reset();
+}
+
+function handleFocusSettingsSubmit(e) {
+  e.preventDefault();
+  const focusDuration = parseInt(elements.focusDurationInput.value, 10);
+  const shortBreak = parseInt(elements.shortBreakInput.value, 10);
+  const longBreak = parseInt(elements.longBreakInput.value, 10);
+  const longBreakInterval = parseInt(
+    elements.longBreakIntervalInput.value,
+    10,
+  );
+
+  if (focusDuration > 0) state.settings.focusDuration = focusDuration;
+  if (shortBreak > 0) state.settings.shortBreak = shortBreak;
+  if (longBreak > 0) state.settings.longBreak = longBreak;
+  if (longBreakInterval > 0)
+    state.settings.longBreakInterval = longBreakInterval;
+
+  saveState();
+  updateFocusUI();
+}
+
+// --------------------------
+// Tareas done / reopen
+// --------------------------
+
+function toggleTaskDone(taskId) {
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+
+  if (task.bucket === 'done') {
+    task.bucket = 'today';
+    task.completedAt = null;
+  } else {
+    task.bucket = 'done';
+    task.completedAt = Date.now();
+    addHistoryEntry({
+      type: 'completed',
+      taskId: task.id,
+      title: task.title,
+      timestamp: Date.now(),
+    });
+    updateStreakOnCompleted();
+  }
+
+  saveState();
+  renderBoard();
+}
+
+// --------------------------
+// Init
+// --------------------------
 
 function init() {
-  initTheme();
-  loadCards();
+  loadState();
 
-  elements.form.addEventListener('submit', addCardFromForm);
-  elements.searchInput.addEventListener('input', render);
-  elements.clearCompletedBtn.addEventListener('click', clearCompleted);
-  elements.themeToggle.addEventListener('click', toggleTheme);
-  elements.addCardBtn.addEventListener('click', () => elements.urlInput.focus());
+  // Valores iniciales ajustes foco
+  elements.focusDurationInput.value = state.settings.focusDuration;
+  elements.shortBreakInput.value = state.settings.shortBreak;
+  elements.longBreakInput.value = state.settings.longBreak;
+  elements.longBreakIntervalInput.value =
+    state.settings.longBreakInterval;
 
-  navButtons.forEach((btn) =>
-    btn.addEventListener('click', () => switchView(btn.dataset.view)),
+  renderBoard();
+  renderHistory();
+  renderStreak();
+  updateSurvivalUI();
+
+  // Eventos formulario
+  elements.addTaskForm.addEventListener('submit', handleAddTask);
+  elements.focusSettingsForm.addEventListener(
+    'submit',
+    handleFocusSettingsSubmit,
   );
 
-  elements.focusTaskSelect.addEventListener('change', handleFocusTaskChange);
-  elements.focusStartPauseBtn.addEventListener('click', toggleFocusTimer);
-  elements.focusResetBtn.addEventListener('click', resetFocusTimer);
-  elements.focusMarkDoneBtn.addEventListener('click', handleFocusMarkDone);
-  elements.focusAnotherBtn.addEventListener('click', () => {
-    resetFocusTimer();
-    startFocusTimer();
+  // Botones overlay focus
+  elements.focusPrimaryBtn.addEventListener('click', () => {
+    if (!currentFocus.taskId || currentFocus.phase === 'idle') return;
+
+    if (currentFocus.timerId) {
+      // Pausar
+      stopFocusTimer();
+      elements.focusPrimaryBtn.textContent = 'Reanudar';
+    } else {
+      // Reanudar
+      startFocusTimer();
+      elements.focusPrimaryBtn.textContent = 'Pausar';
+    }
   });
 
-  initBoardDragAndDrop();
+  elements.focusSecondaryBtn.addEventListener('click', () => {
+    if (!currentFocus.taskId || currentFocus.phase === 'idle') {
+      closeFocusOverlay();
+      return;
+    }
 
-  switchView('inbox');
-  render();
+    if (
+      currentFocus.phase === 'focus' ||
+      currentFocus.phase === 'short_break' ||
+      currentFocus.phase === 'long_break'
+    ) {
+      addHistoryEntry({
+        type: 'focus_cancelled',
+        taskId: currentFocus.taskId,
+        title:
+          state.tasks.find((t) => t.id === currentFocus.taskId)?.title ||
+          '',
+        timestamp: Date.now(),
+      });
+    }
+    closeFocusOverlay();
+  });
+
+  elements.focusCloseBtn.addEventListener('click', () => {
+    closeFocusOverlay();
+  });
+
+  // Tetris del tiempo: menú desplegable 15/25/45
+  elements.timeTetrisBtn.addEventListener('click', () => {
+    elements.timeTetrisMenu.classList.toggle('open');
+    elements.timeTetrisMenu.setAttribute(
+      'aria-hidden',
+      !elements.timeTetrisMenu.classList.contains('open'),
+    );
+  });
+
+  elements.timeTetrisMenu.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-minutes]');
+    if (!btn) return;
+    const minutes = parseInt(btn.dataset.minutes, 10);
+    currentTetrisMinutes = minutes;
+    elements.timeTetrisBtn.textContent = `Tengo ${minutes} min`;
+    elements.timeTetrisMenu.classList.remove('open');
+    elements.timeTetrisMenu.setAttribute('aria-hidden', 'true');
+    openTimeTetris(minutes);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (
+      !elements.timeTetrisMenu.contains(e.target) &&
+      e.target !== elements.timeTetrisBtn
+    ) {
+      elements.timeTetrisMenu.classList.remove('open');
+      elements.timeTetrisMenu.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  elements.tetrisCloseBtn.addEventListener('click', () => {
+    closeTimeTetris();
+  });
+
+  elements.tetrisStartBtn.addEventListener('click', () => {
+    // Empieza sesión de foco con la primera tarea de la playlist
+    const first = elements.tetrisList.querySelector('.tetris-task');
+    if (!first) {
+      closeTimeTetris();
+      return;
+    }
+    const id = first.dataset.id;
+    closeTimeTetris();
+    startFocusFromTask(id);
+  });
+
+  // Modo Supervivencia
+  elements.survivalToggle.addEventListener('click', () => {
+    toggleSurvivalMode(!state.survivalMode.enabled);
+  });
+
+  elements.survivalChips.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-view]');
+    if (!chip) return;
+    const view = chip.dataset.view;
+    state.survivalMode.view = view;
+    saveState();
+
+    const chips = elements.survivalChips.querySelectorAll('[data-view]');
+    chips.forEach((c) => c.classList.remove('active'));
+    chip.classList.add('active');
+
+    renderBoard();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
