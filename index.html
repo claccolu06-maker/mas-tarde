@@ -1,425 +1,382 @@
-<!DOCTYPE html>
-<html lang="es" class="theme-dark">
-<head>
-  <meta charset="UTF-8">
-  <title>Smart‑Time Hub – Organiza tu tiempo libre</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Tipografía Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-
-  <link rel="stylesheet" href="main.css">
-</head>
-<body>
-  <div class="app">
-
-    <!-- MENÚ LATERAL -->
-    <aside class="sidebar-nav">
-      <div class="nav-brand" aria-label="Smart-Time Hub">
-        <span class="nav-logo" aria-hidden="true">⏱️</span>
-        <div class="nav-brand-text">
-          <span class="nav-title">Smart‑Time Hub</span>
-          <span class="nav-subtitle">Tu agenda inteligente</span>
-        </div>
-      </div>
-      <nav class="nav-menu" aria-label="Secciones principales">
-        <button class="nav-item nav-item-active" data-view="inbox" type="button">Bandeja</button>
-        <button class="nav-item" data-view="focus" type="button">Focus / Hoy</button>
-        <button class="nav-item" data-view="board" type="button">Pizarra / Agenda</button>
-        <button class="nav-item" data-view="history" type="button">Historial</button>
-      </nav>
-
-      <div class="nav-onboarding">
-        <p class="nav-onboarding-title">Cómo usarlo</p>
-        <ol>
-          <li>Guarda un enlace en la Bandeja.</li>
-          <li>Organízalo en la Pizarra.</li>
-          <li>Haz Focus por 30 minutos.</li>
-        </ol>
-      </div>
-    </aside>
-
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="app-main-wrapper">
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Tablero de Foco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body>
+    <div class="app">
       <header class="app-header">
-        <div class="brand">
-          <div class="brand-logo" aria-hidden="true">⏱️</div>
-          <div class="brand-text">
-            <h1>Smart‑Time Hub</h1>
-            <p>Convierte tus enlaces guardados en progreso real.</p>
-          </div>
+        <div class="app-header-left">
+          <h1>Tablero de Foco</h1>
+          <p class="app-subtitle">
+            Organiza tu día en bloques, sin dramas y con cabeza.
+          </p>
         </div>
-        <div class="header-actions">
-          <div class="search-box">
-            <label class="sr-only" for="searchInput">Buscar tareas</label>
-            <input
-              id="searchInput"
-              type="search"
-              placeholder="Buscar título o categoría…">
+        <div class="app-header-right">
+          <div class="streak-widget">
+            <div class="streak-label">Racha de días con foco</div>
+            <div class="streak-values">
+              <span>Actual: <strong id="streakCurrent">0</strong></span>
+              <span>Mejor: <strong id="streakBest">0</strong></span>
+            </div>
           </div>
-          <button id="themeToggle" class="btn btn-ghost" type="button" aria-label="Cambiar tema">
-            Tema
-          </button>
-          <button id="addCardBtn" class="btn btn-primary" type="button">
-            + Añadir tarea
+
+          <div class="focus-settings">
+            <details>
+              <summary>Ajustes de foco</summary>
+              <form id="focusSettingsForm" class="focus-settings-form">
+                <label>
+                  Bloque de foco (min)
+                  <input
+                    id="focusDuration"
+                    type="number"
+                    min="5"
+                    max="120"
+                  />
+                </label>
+                <label>
+                  Descanso corto (min)
+                  <input
+                    id="shortBreak"
+                    type="number"
+                    min="1"
+                    max="30"
+                  />
+                </label>
+                <label>
+                  Descanso largo (min)
+                  <input
+                    id="longBreak"
+                    type="number"
+                    min="5"
+                    max="60"
+                  />
+                </label>
+                <label>
+                  Cada cuántos bloques descanso largo
+                  <input
+                    id="longBreakInterval"
+                    type="number"
+                    min="2"
+                    max="8"
+                  />
+                </label>
+                <button class="btn btn-primary" type="submit">
+                  Guardar ajustes
+                </button>
+              </form>
+            </details>
+          </div>
+
+          <div class="time-tetris-wrapper">
+            <button
+              id="timeTetrisBtn"
+              class="btn btn-ghost"
+              type="button"
+            >
+              Tengo 25 min
+            </button>
+            <div
+              id="timeTetrisMenu"
+              class="time-tetris-menu"
+              aria-hidden="true"
+            >
+              <button type="button" data-minutes="15">
+                15 min · Sprint rápido
+              </button>
+              <button type="button" data-minutes="25">
+                25 min · Pomodoro clásico
+              </button>
+              <button type="button" data-minutes="45">
+                45 min · Deep dive ligero
+              </button>
+            </div>
+          </div>
+
+          <button
+            id="survivalToggle"
+            class="btn btn-ghost survival-toggle"
+            type="button"
+          >
+            Modo Supervivencia
           </button>
         </div>
       </header>
 
+      <section class="survival-bar">
+        <p id="survivalSummary" class="survival-summary">
+          Sin datos aún. Añade algunas tareas y fechas límite.
+        </p>
+        <div
+          id="survivalFilters"
+          class="survival-filters"
+          hidden
+        >
+          <div id="survivalChips" class="survival-chips">
+            <button
+              type="button"
+              class="chip active"
+              data-view="survival"
+            >
+              Solo lo que importa
+            </button>
+            <button
+              type="button"
+              class="chip"
+              data-view="all"
+            >
+              Ver todo el tablero
+            </button>
+          </div>
+        </div>
+      </section>
+
       <main class="app-main">
-        <!-- BARRA DE RESUMEN -->
-        <section class="summary-bar" aria-label="Resumen de tareas">
-          <div class="summary-item">
-            <span class="summary-label">Pendientes</span>
-            <span id="pendingCount" class="summary-value">0</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Completadas semana</span>
-            <span id="completedCount" class="summary-value">0</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Tiempo total estimado</span>
-            <span id="totalTime" class="summary-value">0 min</span>
-          </div>
-        </section>
-
-        <!-- VISTA 1: BANDEJA -->
-        <section id="view-inbox" class="view view-active" aria-label="Bandeja de tareas">
-          <section class="layout">
-            <aside class="sidebar" aria-label="Formulario para nueva tarjeta">
-              <h2 class="sidebar-title">Añade algo para “más tarde”</h2>
-              <form id="cardForm" class="card-form" autocomplete="off">
-                <label class="form-label" for="urlInput">URL</label>
+        <aside class="sidebar">
+          <section class="panel">
+            <h2>Captura rápida</h2>
+            <form id="addTaskForm" class="add-task-form">
+              <label>
+                Título de la tarea
                 <input
-                  id="urlInput"
-                  name="url"
+                  id="taskTitle"
                   type="text"
-                  required
-                  placeholder="https://… o solo dominio (youtube.com, medium.com, etc.)">
-
-                <label class="form-label" for="titleInput">Título (opcional)</label>
+                  placeholder="Ej. Preparar mail a Juan"
+                />
+              </label>
+              <label>
+                Enlace (opcional)
                 <input
-                  id="titleInput"
-                  name="title"
-                  type="text"
-                  placeholder="¿De qué trata?">
-
-                <label class="form-label" for="categorySelect">Categoría</label>
-                <select id="categorySelect" name="category" required>
-                  <option value="">Elige una categoría</option>
-                  <option value="video">Video</option>
-                  <option value="article">Artículo</option>
-                  <option value="course">Curso</option>
-                  <option value="project">Proyecto</option>
+                  id="taskUrl"
+                  type="url"
+                  placeholder="https://..."
+                />
+              </label>
+              <label>
+                Categoría
+                <select id="taskCategory">
+                  <option value="">Sin categoría</option>
+                  <option value="deep_work">Deep work</option>
+                  <option value="admin">Administrativo</option>
+                  <option value="learning">Aprender</option>
+                  <option value="personal">Personal</option>
+                  <option value="quick_win">Golpe rápido</option>
                 </select>
-
-                <label class="form-label" for="timeInput">Tiempo (min)</label>
+              </label>
+              <label>
+                Estimación (min)
                 <input
-                  id="timeInput"
-                  name="estimatedTime"
+                  id="taskEstimate"
                   type="number"
-                  min="1"
-                  max="600"
-                  required
-                  placeholder="Ej: 30">
-
-                <button type="submit" class="btn btn-primary btn-full">
-                  Guardar en bandeja
-                </button>
-              </form>
-            </aside>
-
-            <section class="cards-section" aria-label="Listado de tarjetas">
-              <div class="cards-header">
-                <div>
-                  <h2>Tu bolsa de enlaces y tareas</h2>
-                  <p id="cardsSubtitle" class="cards-subtitle">
-                    Tu mente está libre ✨
-                  </p>
-                </div>
-              </div>
-
-              <div id="cardsGrid" class="cards-grid"></div>
-
-              <div id="emptyState" class="empty-state" aria-hidden="true">
-                <h3>Empieza guardando tu primera tarea</h3>
-                <p>Usa el formulario de la izquierda para llenar tu bandeja.</p>
-              </div>
-            </section>
+                  min="5"
+                  step="5"
+                  placeholder="25"
+                />
+              </label>
+              <label>
+                Fecha límite
+                <input
+                  id="taskDueDate"
+                  type="date"
+                />
+              </label>
+              <button class="btn btn-primary" type="submit">
+                Añadir a la bandeja
+              </button>
+            </form>
           </section>
-        </section>
 
-        <!-- VISTA 2: FOCUS / HOY -->
-        <section id="view-focus" class="view" aria-label="Modo foco">
-          <div class="focus-layout">
-            <header class="focus-header">
-              <div class="focus-header-main">
-                <h2>Modo Focus / Hoy</h2>
-                <p>Concéntrate solo en una tarea durante 30 minutos.</p>
-                <p id="focusNowLabel" class="focus-now-label" hidden>
-                  Ahora: <span id="focusNowTitle"></span>
-                </p>
-              </div>
-              <div class="focus-task-selector">
-                <label for="focusTaskSelect">Tarea para esta sesión</label>
-                <select id="focusTaskSelect">
-                  <option value="">Selecciona una tarea pendiente…</option>
-                </select>
-              </div>
-            </header>
-
-            <section class="focus-main">
-              <div class="focus-task-card" id="focusTaskCard">
-                <p class="focus-empty">
-                  Elige una tarea arriba para comenzar.
-                </p>
-                <div class="focus-task-content" id="focusTaskContent" hidden>
-                  <h3 id="focusTaskTitle"></h3>
-                  <p id="focusTaskUrl" class="focus-task-url"></p>
-                  <div class="focus-task-meta">
-                    <span id="focusTaskCategory" class="pill pill-focus-category"></span>
-                    <span id="focusTaskTime" class="pill pill-focus-time"></span>
-                  </div>
-                  <button
-                    id="focusOpenBtn"
-                    class="btn btn-ghost focus-open-btn"
-                    type="button">
-                    Abrir enlace
-                  </button>
-                </div>
-              </div>
-
-              <div class="focus-timer-card">
-                <div class="focus-timer-display" id="focusTimerDisplay">
-                  30:00
-                </div>
-                <div class="focus-timer-controls">
-                  <button
-                    id="focusStartPauseBtn"
-                    class="btn btn-primary"
-                    type="button">
-                    Iniciar sesión
-                  </button>
-                  <button
-                    id="focusResetBtn"
-                    class="btn btn-ghost"
-                    type="button">
-                    Reiniciar
-                  </button>
-                </div>
-
-                <div id="focusResultPanel" class="focus-result" hidden>
-                  <p id="focusResultMessage">
-                    Sesión de 30 minutos terminada. Marca la tarea como completada o haz otra sesión con la misma tarea.
-                  </p>
-                  <div class="focus-result-actions">
-                    <button
-                      id="focusMarkDoneBtn"
-                      class="btn btn-primary"
-                      type="button">
-                      Marcar completada
-                    </button>
-                    <button
-                      id="focusAnotherBtn"
-                      class="btn btn-ghost"
-                      type="button">
-                      Otra sesión con esta tarea
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <!-- VISTA 3: PIZARRA / AGENDA -->
-        <section
-          id="view-board"
-          class="view"
-          aria-label="Pizarra / Agenda semanal">
-          <section class="board-layout">
-            <header class="board-header">
-              <div class="board-title-group">
-                <h2 class="board-title">Pizarra / Agenda</h2>
-                <p class="board-subtitle">
-                  Las nuevas tareas empiezan en la Bandeja. Usa el selector de cada tarjeta o las flechas para moverlas:
-                  <strong>Bandeja → Algún día → Esta semana → Hoy → Hecho</strong>.
-                </p>
-              </div>
-            </header>
-
-            <div class="board-columns">
-              <!-- Algún día -->
-              <section class="board-column">
-                <header class="board-column-header">
-                  <h3>Algún día</h3>
-                  <span
-                    id="boardCountSomeday"
-                    class="board-column-counter">0</span>
-                </header>
-                <div
-                  id="boardSomeday"
-                  class="board-column-body"
-                  data-bucket="someday"
-                  data-empty-text="Ideas sin fecha fija. Pasa aquí lo que quieras hacer algún día."></div>
-              </section>
-
-              <!-- Esta semana -->
-              <section class="board-column">
-                <header class="board-column-header">
-                  <h3>Esta semana</h3>
-                  <span
-                    id="boardCountWeek"
-                    class="board-column-counter">0</span>
-                </header>
-                <div
-                  id="boardWeek"
-                  class="board-column-body"
-                  data-bucket="week"
-                  data-empty-text="Elige 3–7 tareas que te gustaría intentar hacer esta semana."></div>
-              </section>
-
-              <!-- Hoy -->
-              <section class="board-column board-column-today">
-                <header class="board-column-header">
-                  <h3>
-                    Hoy
-                    <span class="board-column-wip">máx. 3</span>
-                  </h3>
-                  <span
-                    id="boardCountToday"
-                    class="board-column-counter">0</span>
-                </header>
-                <div
-                  id="boardToday"
-                  class="board-column-body"
-                  data-bucket="today"
-                  data-empty-text="Pon aquí solo 1–3 tareas. Lo que realmente vas a tocar hoy."></div>
-              </section>
-
-              <!-- Hecho -->
-              <section class="board-column board-column-done">
-                <header class="board-column-header">
-                  <h3>Hecho</h3>
-                  <span
-                    id="boardCountDone"
-                    class="board-column-counter">0</span>
-                </header>
-                <div
-                  id="boardDone"
-                  class="board-column-body board-column-body-done"
-                  data-bucket="done"
-                  data-empty-text="Cuando completes algo, aparecerá aquí antes de ir al Historial."></div>
-              </section>
-            </div>
+          <section class="panel">
+            <h2>Historial de foco</h2>
+            <p id="historyEmpty" class="history-empty">
+              Aquí verás tus bloques de foco completados.
+            </p>
+            <ul id="historyList" class="history-list"></ul>
           </section>
-        </section>
+        </aside>
 
-        <!-- VISTA 4: HISTORIAL -->
-        <section
-          id="view-history"
-          class="view"
-          aria-label="Historial de tareas completadas">
-          <section class="history-layout">
-            <header class="history-header">
-              <h2>Historial</h2>
-              <div class="history-summary">
-                <div class="history-summary-item">
-                  <span>Sesiones esta semana: </span>
-                  <span id="historySessionsCount">0</span>
-                </div>
-                <div class="history-summary-item">
-                  <span>Minutos acumulados: </span>
-                  <span id="historyMinutesTotal">0 min</span>
-                </div>
-                <div class="history-summary-item">
-                  <span>Racha de días con foco: </span>
-                  <span id="historyStreakDays">0 días</span>
-                </div>
-              </div>
+        <section class="board">
+          <section
+            class="task-column"
+            data-bucket="inbox"
+            id="inboxColumn"
+          >
+            <header class="task-column-header">
+              <h2>Bandeja</h2>
+              <p>Todo lo que aún no has decidido cuándo hacer.</p>
             </header>
+            <ul class="task-list"></ul>
+          </section>
 
-            <section class="history-table-section">
-              <p id="historySubtitle" class="history-subtitle"></p>
-              <table class="history-table">
-                <thead>
-                  <tr>
-                    <th>Título</th>
-                    <th>Categoría</th>
-                    <th>Fecha</th>
-                    <th>Tiempo</th>
-                    <th>Sesiones Focus</th>
-                  </tr>
-                </thead>
-                <tbody id="historyTableBody"></tbody>
-              </table>
-            </section>
+          <section
+            class="task-column"
+            data-bucket="today"
+            id="todayColumn"
+          >
+            <header class="task-column-header">
+              <h2>Hoy</h2>
+              <p>Lo que de verdad quieres mover hoy.</p>
+            </header>
+            <ul class="task-list"></ul>
+          </section>
+
+          <section
+            class="task-column"
+            data-bucket="week"
+            id="weekColumn"
+          >
+            <header class="task-column-header">
+              <h2>Esta semana</h2>
+              <p>Bloques que vas a ir encajando durante la semana.</p>
+            </header>
+            <ul class="task-list"></ul>
+          </section>
+
+          <section
+            class="task-column"
+            data-bucket="done"
+            id="doneColumn"
+          >
+            <header class="task-column-header">
+              <h2>Hechas</h2>
+              <p>Para recordarle a tu cerebro que sí avanzas.</p>
+            </header>
+            <ul class="task-list"></ul>
           </section>
         </section>
       </main>
-
-      <footer class="app-footer">
-        <div class="footer-left">
-          <span id="footerSummary"></span>
-        </div>
-        <div class="footer-right">
-          <button
-            id="clearCompletedBtn"
-            class="btn btn-ghost-sm"
-            type="button">
-            Limpiar completadas
-          </button>
-        </div>
-      </footer>
     </div>
-  </div>
 
-  <!-- TEMPLATE DE TARJETA -->
-  <template id="cardTemplate">
-    <article class="card">
-      <button
-        class="card-complete-btn"
-        type="button"
-        aria-label="Completar">
-        ✓
-      </button>
-      <div class="card-body">
-        <div class="card-header">
-          <h3 class="card-title"></h3>
-        </div>
-        <p class="card-url"></p>
-        <div class="card-meta">
-          <span class="pill pill-category"></span>
-          <span class="pill pill-time"></span>
-        </div>
-      </div>
-      <div class="card-footer">
-        <select
-          class="card-move-select btn-link"
-          aria-label="Mover a la pizarra">
-          <option value="inbox">📥 Bandeja</option>
-          <option value="someday">☁️ Algún día</option>
-          <option value="week">📅 Esta semana</option>
-          <option value="today">🔥 Hoy</option>
-        </select>
-        <span class="card-footer-spacer"></span>
-        <button class="btn-link card-focus-btn" type="button">
-          Focus
-        </button>
-        <button class="btn-link card-open-btn" type="button">
-          Abrir
-        </button>
-        <button class="btn-link card-delete-btn" type="button">
-          Borrar
-        </button>
-      </div>
-    </article>
-  </template>
+    <!-- Overlay Focus -->
+    <div id="focusOverlay" class="overlay">
+      <div class="overlay-backdrop"></div>
+      <div class="overlay-content focus-overlay-content">
+        <header class="overlay-header">
+          <div>
+            <h2 id="focusTaskTitle">Tarea en foco</h2>
+            <p class="overlay-subtitle">
+              <span id="focusCategoryLabel">Sin categoría</span> ·
+              <span id="focusColumnLabel">Sin columna</span>
+            </p>
+          </div>
+          <button
+            id="focusCloseBtn"
+            class="btn btn-ghost"
+            type="button"
+          >
+            Cerrar
+          </button>
+        </header>
 
-  <script src="app.js"></script>
-</body>
+        <div class="focus-timer">
+          <div class="focus-phase" id="focusPhaseLabel">
+            Bloque de foco
+          </div>
+          <div class="focus-timer-main">
+            <span
+              id="focusTimerLabel"
+              class="focus-timer-label"
+              >25:00</span
+            >
+            <div class="focus-progress">
+              <div
+                id="focusProgressBar"
+                class="focus-progress-bar"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="overlay-footer">
+          <button
+            id="focusPrimaryBtn"
+            class="btn btn-primary"
+            type="button"
+          >
+            Pausar
+          </button>
+          <button
+            id="focusSecondaryBtn"
+            class="btn btn-ghost"
+            type="button"
+          >
+            Cancelar sesión
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Overlay Tetris del tiempo -->
+    <div id="tetrisOverlay" class="overlay">
+      <div class="overlay-backdrop"></div>
+      <div class="overlay-content tetris-overlay-content">
+        <header class="overlay-header">
+          <div>
+            <h2 id="tetrisTitle">Tengo 25 min</h2>
+            <p
+              id="tetrisDescription"
+              class="overlay-subtitle"
+            >
+              Te preparo una mini playlist para este bloque.
+            </p>
+          </div>
+          <button
+            id="tetrisCloseBtn"
+            class="btn btn-ghost"
+            type="button"
+          >
+            Cerrar
+          </button>
+        </header>
+
+        <div class="tetris-body">
+          <p
+            id="tetrisEmptyMessage"
+            class="tetris-empty"
+            hidden
+          >
+            No he encontrado tareas que encajen bien con ese bloque
+            de tiempo. Prueba con otro tamaño o crea una tarea más
+            pequeña.
+          </p>
+          <ul id="tetrisList" class="tetris-list"></ul>
+        </div>
+
+        <footer class="overlay-footer">
+          <button
+            id="tetrisStartBtn"
+            class="btn btn-primary"
+            type="button"
+          >
+            Empezar con esta playlist
+          </button>
+          <button
+            id="tetrisCloseBtnFooter"
+            class="btn btn-ghost"
+            type="button"
+          >
+            Volver al tablero
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      // Sincronizar botón footer de Tetris con el cierre real
+      document.addEventListener('DOMContentLoaded', () => {
+        const footerClose =
+          document.getElementById('tetrisCloseBtnFooter');
+        const realClose = document.getElementById('tetrisCloseBtn');
+        if (footerClose && realClose) {
+          footerClose.addEventListener('click', () =>
+            realClose.click(),
+          );
+        }
+      });
+    </script>
+  </body>
 </html>
