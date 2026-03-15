@@ -8,13 +8,25 @@
   </head>
   <body>
     <div class="app">
+      <!-- TOP BAR -->
       <header class="app-header">
         <div class="app-header-left">
           <h1>Tablero de Foco</h1>
           <p class="app-subtitle">
-            Organiza tu día en bloques, sin dramas y con cabeza.
+            Encaja tu día en bloques, sin dramas y con cabeza.
           </p>
         </div>
+
+        <div class="app-header-center">
+          <button
+            id="quickFocusBtn"
+            class="btn btn-primary btn-lg"
+            type="button"
+          >
+            Empezar foco
+          </button>
+        </div>
+
         <div class="app-header-right">
           <div class="streak-widget">
             <div class="streak-label">Racha de días con foco</div>
@@ -85,7 +97,7 @@
               aria-hidden="true"
             >
               <button type="button" data-minutes="15">
-                15 min · Sprint rápido
+                15 min · Mini sprint
               </button>
               <button type="button" data-minutes="25">
                 25 min · Pomodoro clásico
@@ -106,10 +118,14 @@
         </div>
       </header>
 
+      <!-- BARRA SUPERVIVENCIA -->
       <section class="survival-bar">
-        <p id="survivalSummary" class="survival-summary">
-          Sin datos aún. Añade algunas tareas y fechas límite.
-        </p>
+        <div class="survival-bar-left">
+          <span class="survival-icon">🔥</span>
+          <p id="survivalSummary" class="survival-summary">
+            Sin datos aún. Añade algunas tareas y fechas límite.
+          </p>
+        </div>
         <div
           id="survivalFilters"
           class="survival-filters"
@@ -121,23 +137,28 @@
               class="chip active"
               data-view="survival"
             >
-              Solo lo que importa
+              🎯 Solo lo que importa
             </button>
             <button
               type="button"
               class="chip"
               data-view="all"
             >
-              Ver todo el tablero
+              👀 Ver todo el tablero
             </button>
           </div>
         </div>
       </section>
 
+      <!-- MAIN -->
       <main class="app-main">
+        <!-- COLUMNA IZQUIERDA -->
         <aside class="sidebar">
           <section class="panel">
             <h2>Captura rápida</h2>
+            <p class="panel-subtitle">
+              Vacía la cabeza, ya decidiremos luego dónde encaja.
+            </p>
             <form id="addTaskForm" class="add-task-form">
               <label>
                 Título de la tarea
@@ -191,6 +212,9 @@
 
           <section class="panel">
             <h2>Historial de foco</h2>
+            <p class="panel-subtitle">
+              Tus bloques completados y tareas que ya no pesan.
+            </p>
             <p id="historyEmpty" class="history-empty">
               Aquí verás tus bloques de foco completados.
             </p>
@@ -198,21 +222,10 @@
           </section>
         </aside>
 
-        <section class="board">
+        <!-- COLUMNA CENTRAL: HOY -->
+        <section class="today-wrapper">
           <section
-            class="task-column"
-            data-bucket="inbox"
-            id="inboxColumn"
-          >
-            <header class="task-column-header">
-              <h2>Bandeja</h2>
-              <p>Todo lo que aún no has decidido cuándo hacer.</p>
-            </header>
-            <ul class="task-list"></ul>
-          </section>
-
-          <section
-            class="task-column"
+            class="task-column task-column-today"
             data-bucket="today"
             id="todayColumn"
           >
@@ -222,40 +235,83 @@
             </header>
             <ul class="task-list"></ul>
           </section>
+        </section>
 
-          <section
-            class="task-column"
-            data-bucket="week"
-            id="weekColumn"
-          >
-            <header class="task-column-header">
-              <h2>Esta semana</h2>
-              <p>Bloques que vas a ir encajando durante la semana.</p>
-            </header>
-            <ul class="task-list"></ul>
-          </section>
+        <!-- COLUMNA DERECHA: PESTAÑAS -->
+        <section class="right-column">
+          <section class="panel tabs-panel">
+            <div class="tabs-header">
+              <button
+                class="tab-btn active"
+                data-target="inboxColumn"
+              >
+                Bandeja
+              </button>
+              <button
+                class="tab-btn"
+                data-target="weekColumn"
+              >
+                Esta semana
+              </button>
+              <button
+                class="tab-btn"
+                data-target="doneColumn"
+              >
+                Hechas
+              </button>
+            </div>
 
-          <section
-            class="task-column"
-            data-bucket="done"
-            id="doneColumn"
-          >
-            <header class="task-column-header">
-              <h2>Hechas</h2>
-              <p>Para recordarle a tu cerebro que sí avanzas.</p>
-            </header>
-            <ul class="task-list"></ul>
+            <div class="tabs-body">
+              <section
+                class="task-column tab-column active"
+                data-bucket="inbox"
+                id="inboxColumn"
+              >
+                <header class="task-column-header">
+                  <h2>Bandeja</h2>
+                  <p>Todo lo que aún no has decidido cuándo hacer.</p>
+                </header>
+                <ul class="task-list"></ul>
+              </section>
+
+              <section
+                class="task-column tab-column"
+                data-bucket="week"
+                id="weekColumn"
+              >
+                <header class="task-column-header">
+                  <h2>Esta semana</h2>
+                  <p>
+                    Bloques que vas a ir encajando durante la semana.
+                  </p>
+                </header>
+                <ul class="task-list"></ul>
+              </section>
+
+              <section
+                class="task-column tab-column"
+                data-bucket="done"
+                id="doneColumn"
+              >
+                <header class="task-column-header">
+                  <h2>Hechas</h2>
+                  <p>Para recordarle a tu cerebro que sí avanzas.</p>
+                </header>
+                <ul class="task-list"></ul>
+              </section>
+            </div>
           </section>
         </section>
       </main>
     </div>
 
-    <!-- Overlay Focus -->
+    <!-- OVERLAY FOCUS -->
     <div id="focusOverlay" class="overlay">
       <div class="overlay-backdrop"></div>
       <div class="overlay-content focus-overlay-content">
         <header class="overlay-header">
           <div>
+            <p class="overlay-kicker">Bloque de foco</p>
             <h2 id="focusTaskTitle">Tarea en foco</h2>
             <p class="overlay-subtitle">
               <span id="focusCategoryLabel">Sin categoría</span> ·
@@ -272,9 +328,6 @@
         </header>
 
         <div class="focus-timer">
-          <div class="focus-phase" id="focusPhaseLabel">
-            Bloque de foco
-          </div>
           <div class="focus-timer-main">
             <span
               id="focusTimerLabel"
@@ -287,6 +340,12 @@
                 class="focus-progress-bar"
               ></div>
             </div>
+          </div>
+          <div
+            id="focusPhaseLabel"
+            class="focus-phase"
+          >
+            Preparando el bloque…
           </div>
         </div>
 
@@ -309,12 +368,13 @@
       </div>
     </div>
 
-    <!-- Overlay Tetris del tiempo -->
+    <!-- OVERLAY TETRIS -->
     <div id="tetrisOverlay" class="overlay">
       <div class="overlay-backdrop"></div>
       <div class="overlay-content tetris-overlay-content">
         <header class="overlay-header">
           <div>
+            <p class="overlay-kicker">Tetris del tiempo</p>
             <h2 id="tetrisTitle">Tengo 25 min</h2>
             <p
               id="tetrisDescription"
@@ -366,7 +426,6 @@
 
     <script src="app.js"></script>
     <script>
-      // Sincronizar botón footer de Tetris con el cierre real
       document.addEventListener('DOMContentLoaded', () => {
         const footerClose =
           document.getElementById('tetrisCloseBtnFooter');
@@ -376,6 +435,38 @@
             realClose.click(),
           );
         }
+
+        // Tabs columnas derechas
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabColumns = document.querySelectorAll('.tab-column');
+        tabButtons.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const target = btn.dataset.target;
+            tabButtons.forEach((b) => b.classList.remove('active'));
+            tabColumns.forEach((col) =>
+              col.classList.remove('active'),
+            );
+            btn.classList.add('active');
+            const column = document.getElementById(target);
+            if (column) column.classList.add('active');
+          });
+        });
+
+        // Botón "Empezar foco": abre selector sencillo
+        const quickBtn = document.getElementById('quickFocusBtn');
+        const todayList = document.querySelector(
+          '#todayColumn .task-list',
+        );
+        quickBtn.addEventListener('click', () => {
+          const firstTask =
+            todayList.querySelector('.task') ||
+            document.querySelector('#inboxColumn .task');
+          if (!firstTask) return;
+          const id = firstTask.dataset.id;
+          if (window.startFocusFromTask) {
+            window.startFocusFromTask(id);
+          }
+        });
       });
     </script>
   </body>
